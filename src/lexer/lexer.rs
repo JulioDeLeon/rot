@@ -57,6 +57,16 @@ impl Lexer {
 }
 
 fn is_space(c: char) -> bool {
-    let re = Regex::new(r"").unwrap();
-    return re.is_match("");
+    let space_regex: Regex = Regex::new(r"\s").unwrap();
+    return space_regex.is_match(&*c.to_string());
+}
+
+fn is_digit(c: char) -> bool {
+    let number_regex: Regex = Regex::new(r"\d").unwrap();
+    return number_regex.is_match(&*c.to_string());
+}
+
+fn is_identifier_char(c: char) -> bool {
+    let identifier_regex: Regex = Regex::new(r"^[a-zA-Z0-9_]*$").unwrap();
+    return identifier_regex.is_match(&*c.to_string());
 }
