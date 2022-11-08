@@ -5,12 +5,12 @@ enum TokenType {
 
 struct Token {
     category: TokenType,
-    text: string,
-    position: int,
+    text: String,
+    position: i32,
 }
 
 impl Token {
-    fn new(tType: TokenType, text: string, pos: int) -> Token {
+    fn new(tType: TokenType, text: String, pos: i32) -> Token {
         Token {
             category: tType,
             text,
