@@ -1,7 +1,8 @@
 use std::fmt;
+use std::fmt::Formatter;
 use regex::Regex;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Kind {
     Number,
     Identifier,
@@ -38,60 +39,93 @@ pub enum Kind {
 
 impl fmt::Display for Kind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        match self {
+            Kind::Comment => write!(f, "Comment"),
+            Kind::Number => write!(f, "Number"),
+            Kind::Identifier => write!(f, "Identifier"),
+            Kind::LeftParen => write!(f, "LeftParen"),
+            Kind::RightParen => write!(f, "RightParen"),
+            Kind::LeftBracket => write!(f, "LeftBracket"),
+            Kind::RightBracket => write!(f, "RightBracket"),
+            Kind::LeftCurly => write!(f, "LeftCurly"),
+            Kind::RightCurly => write!(f, "RightCurly"),
+            Kind::LessThan => write!(f, "LessThan"),
+            Kind::GreaterThan => write!(f, "GreaterThan"),
+            Kind::Equal => write!(f, "Equal"),
+            Kind::Plus => write!(f, "Plus"),
+            Kind::Minus => write!(f, "Minus"),
+            Kind::Asterisk => write!(f, "Asterisk"),
+            Kind::Slash => write!(f, "Slash"),
+            Kind::Hash => write!(f, "Hash"),
+            Kind::Dot => write!(f, "Dot"),
+            Kind::Comma => write!(f, "Comma"),
+            Kind::Colon => write!(f, "Colon"),
+            Kind::Semicolon => write!(f, "Semicolon"),
+            Kind::SingleQuote => write!(f, "SingleQuote"),
+            Kind::DoubleQuote => write!(f, "DoubleQuote"),
+            Kind::Pipe => write!(f, "Pipe"),
+            Kind::End => write!(f, "End"),
+            Kind::Question => write!(f, "Question"),
+            Kind::Exclaim => write!(f, "Exclaim"),
+            Kind::Ampersand => write!(f, "Ampersand"),
+            Kind::Atom => write!(f, "Atom"),
+            Kind::Space => write!(f, "Space"),
+            _ => write!(f, "UNKNOWN CASE")
+        }
     }
 }
 
-pub fn is_space(c: char) -> bool {
+pub fn is_space(s: &str) -> bool {
     let space_regex: Regex = Regex::new(r"\s").unwrap();
-    return space_regex.is_match(&*c.to_string());
+    return space_regex.is_match(s);
 }
 
-pub fn is_digit(c: char) -> bool {
+pub fn is_digit(s: &str) -> bool {
     let number_regex: Regex = Regex::new(r"\d").unwrap();
-    return number_regex.is_match(&*c.to_string());
+    return number_regex.is_match(s);
 }
 
-fn is_identifier_char(c: char) -> bool {
+fn is_identifier_char(s: &str) -> bool {
     let identifier_regex: Regex = Regex::new(r"^[a-zA-Z-1-9_]*$").unwrap();
-    return identifier_regex.is_match(&*c.to_string());
+    return identifier_regex.is_match(s);
 }
 
-fn char_to_kind(c: char) -> Kind {
-    match c {
-        '(' => Kind::LeftParen,
-        ')' => Kind::RightParen,
-        '[' => Kind::LeftBracket,
-        ']' => Kind::RightBracket,
-        '{' => Kind::LeftCurly,
-        '}' => Kind::RightCurly,
-        '<' => Kind:: LessThan,
-        '>' => Kind::GreaterThan,
-        '|' => Kind::Pipe,
-        '=' => Kind::Equal,
-        '+' => Kind::Plus,
-        '-' => Kind::Minus,
-        '*' => Kind::Asterisk,
-        '?' => Kind::Question,
-        '!' => Kind::Exclaim,
-        '&' => Kind::Ampersand,
-        '/' => Kind::Slash,
-        '#' => Kind::Hash,
-        ',' => Kind::Comma,
-        '.' => Kind::Dot,
-        '\'' => Kind::SingleQuote,
-        '"' => Kind::DoubleQuote,
-        '\0' => Kind::End,
+pub fn find_kind(s: &str) -> Kind {
+    match s {
+        "(" => Kind::LeftParen,
+        ")" => Kind::RightParen,
+        "[" => Kind::LeftBracket,
+        "]" => Kind::RightBracket,
+        "{" => Kind::LeftCurly,
+        "}" => Kind::RightCurly,
+        "<" => Kind:: LessThan,
+        ">" => Kind::GreaterThan,
+        "|" => Kind::Pipe,
+        "=" => Kind::Equal,
+        "+" => Kind::Plus,
+        "-" => Kind::Minus,
+        "*" => Kind::Asterisk,
+        "?" => Kind::Question,
+        "!" => Kind::Exclaim,
+        "&" => Kind::Ampersand,
+        "/" => Kind::Slash,
+        "#" => Kind::Hash,
+        "," => Kind::Comma,
+        "." => Kind::Dot,
+        "\"" => Kind::SingleQuote,
+        "\"" => Kind::DoubleQuote,
+        "\0" => Kind::End,
         _ => {
-            if is_space(c) { Kind::Space }
-            else if is_digit(c) { Kind::Number }
-            else if is_identifier_char(c) { Kind::Identifier }
-            else { Kind::Err("Error unrecognized: {c}".parse().unwrap()) }
+            if is_space(s) { Kind::Space }
+            else if is_digit(s) { Kind::Number }
+            else if is_identifier_char(s) { Kind::Identifier }
+            else { Kind::Err("Error unrecognized: {s}".parse().unwrap()) }
         },
     }
 }
 
 
+#[derive(PartialEq, Debug)]
 pub struct Token {
     kind: Kind,
     lexeme: String,
@@ -128,10 +162,14 @@ impl Token {
 
         return ret;
     }
+
+    pub fn to_string(&self) -> String {
+        format!("Token[kind: {}, lexme: {}, position: {}]", self.kind, self.lexeme, self.position)
+    }
 }
 
 impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Token[kind: {}, lexme: {}, position: {}]", self.kind, self.lexeme, self.position)
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "token[kind: {}, lexeme: {}, position: {}]", self.kind, self.lexeme, self.position)
     }
 }
