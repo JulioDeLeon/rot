@@ -8,9 +8,8 @@ https://mohitkarekar.com/posts/pl/lexer/
 look at scanner / lexer from code
  */
 
-use regex::Regex;
 use crate::lexer::lexer::LexerState::Start;
-use crate::lexer::token::Kind;
+use crate::lexer::token::{is_space, Kind};
 use crate::lexer::token::Token;
 
 // this may not be needed
@@ -21,13 +20,7 @@ enum LexerState {
 
 struct Lexer {
     state: LexerState,
-
-    // buffers.
-    identifier: Token,
-    number: Token,
-    slash_or_comment: Token,
-    atom: Token,
-
+    tokens: Vec<Token>,
     buffer: Vec<char>,
     index: usize
 }
@@ -36,37 +29,58 @@ impl Lexer {
     fn new(buff: Vec<char>) -> Lexer {
         Lexer {
             state: Start,
-            identifier: Token::new(Kind::Identifier, "", 0),
-            number: Token::new(Kind::Number, "", 0),
-            slash_or_comment: Token::new(Kind::Slash, "", 0),
-            atom: Token::new(Kind::Atom, "", 0),
+            tokens: Vec::new(),
             buffer: buff,
             index: 0
         }
     }
 
-    fn peek(&self) -> char {
-        return self.buffer[self.index];
+    fn peek(&self) -> Result<char, &str> {
+        return if self.index < self.buffer.capacity() {
+            Ok(self.buffer[self.index])
+        } else {
+            Err("indexing error")
+        }
     }
 
-    fn get(&mut self) -> char {
-        let ret: char = self.buffer[self.index];
-        self.index = self.index + 1;
-        return ret;
+    fn get(&mut self) -> Result<char, &str> {
+        return if self.index < self.buffer.capacity() {
+            self.inc();
+            Ok(self.buffer[self.index])
+        } else {
+            Err("indexing error")
+        };
     }
-}
 
-fn is_space(c: char) -> bool {
-    let space_regex: Regex = Regex::new(r"\s").unwrap();
-    return space_regex.is_match(&*c.to_string());
-}
+    fn inc(&mut self) {
+        self.index += 1;
+    }
 
-fn is_digit(c: char) -> bool {
-    let number_regex: Regex = Regex::new(r"\d").unwrap();
-    return number_regex.is_match(&*c.to_string());
-}
+    fn dec(&mut self) {
+        self.index -= 1;
+    }
 
-fn is_identifier_char(c: char) -> bool {
-    let identifier_regex: Regex = Regex::new(r"^[a-zA-Z0-9_]*$").unwrap();
-    return identifier_regex.is_match(&*c.to_string());
+    fn parse(&mut self) {
+        let mut t_buf: String = "".to_owned();
+
+        while let Ok(c) = self.get() {
+            if is_space(c) {
+                self.handle_buffer(&t_buf);
+                continue;
+            }
+        }
+    }
+
+    fn handle_buffer(&mut self, buffer: &str) {
+        // temp into basic token
+        let t_token = Token::new(Kind::Atom, buffer, self.index - buffer.len());
+        self.tokens.push(t_token);
+    }
+
+    /*
+        1. take in char stream
+        2. read until end of stream
+            2a. read in char and add to buffer.
+            2b. once a space is encountered, stop adding to buffer then evaluate.
+     */
 }
