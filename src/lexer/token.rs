@@ -149,16 +149,18 @@ fn is_identifier_char(s: &str) -> bool {
 pub struct Token {
     kind: Kind,
     lexeme: String,
-    position: usize,
+    line_number: usize,
+    line_position: usize,
 }
 
 impl Token {
     // char array with length?
-    pub(crate) fn new(kindT: Kind, text: &str, pos: usize) -> Token {
+    pub(crate) fn new(kindT: Kind, text: &str, linNum: usize, linPos: usize) -> Token {
         Token {
             kind: kindT,
             lexeme: text.parse().unwrap(),
-            position: pos,
+            line_number: linNum,
+            line_position: linPos
         }
     }
 
@@ -184,13 +186,18 @@ impl Token {
     }
 
     pub fn to_string(&self) -> String {
-        format!("Token[kind: {}, lexme: {}, position: {}]", self.kind, self.lexeme, self.position)
+        format!("Token[kind: {}, lexme: {}, line: {}, position: {}]", self.kind, self.lexeme, self.line_number, self.line_position)
     }
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "token[kind: {}, lexeme: {}, position: {}]", self.kind, self.lexeme, self.position)
+        write!(f, "token[kind: {}, lexeme: {}, line_number: {}, line_position: {}]",
+               self.kind,
+               self.lexeme,
+               self.line_number,
+               self.line_position
+        )
     }
 }
 
@@ -203,11 +210,11 @@ pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
     ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
-    ret.push((Regex::new(r"/\*(\*(?!\/)|[^*])*\*/").unwrap(), Kind::Comment));
+    ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::Comment));
     ret.push((Regex::new(r"[0-9]+").unwrap(), Kind::IntLiteral));
     ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
 
-    //ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
+    // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
     // advanced operators
     ret.push((Regex::new(r"\?:").unwrap(), Kind::Elvis));
     ret.push((Regex::new(r"\|\|").unwrap(), Kind::LogicalOr));

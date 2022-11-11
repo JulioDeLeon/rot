@@ -25,8 +25,10 @@ pub struct Lexer {
     pub tokens: Vec<Token>,
     buffer: Vec<char>,
     index: usize,
-    complexDic: Vec<(Regex, Kind)>,
-    simpleDic: Vec<(String, Kind)>
+    line_number: usize,
+    line_position: usize,
+    complex_dict: Vec<(Regex, Kind)>,
+    simple_dict: Vec<(String, Kind)>
 }
 
 impl Lexer {
@@ -36,8 +38,10 @@ impl Lexer {
             tokens: Vec::new(),
             buffer: buff,
             index: 0,
-            complexDic: build_complex_dictionary(),
-            simpleDic: build_simple_dictionary()
+            line_number: 0,
+            line_position: 0,
+            complex_dict: build_complex_dictionary(),
+            simple_dict: build_simple_dictionary()
         }
     }
 
@@ -72,6 +76,12 @@ impl Lexer {
         while let check = self.get() {
             match check {
                 Ok(c) => {
+                    if c == '\n' {
+                        self.line_number += 1;
+                        self.line_position = 0;
+                    } else {
+                        self.line_position += 1;
+                    }
                     if is_space(&c.to_string()) {
                         self.handle_buffer(&t_buf);
                         t_buf = "".to_owned();
@@ -89,8 +99,12 @@ impl Lexer {
     }
 
     fn handle_buffer(&mut self, buffer: &str) {
-        if let Some(t_kind) = find_kind(self.complexDic.clone(), self.simpleDic.clone(), buffer) {
-            let t_token = Token::new(t_kind, buffer.clone(), self.index - buffer.len() - 1);
+        if let Some(t_kind) = find_kind(self.complex_dict.clone(), self.simple_dict.clone(), buffer) {
+            let t_token = Token::new(
+                t_kind,
+                buffer.clone(),
+                self.line_number,
+                self.line_position - buffer.len() - 1);
             self.tokens.push(t_token);
         } else {
             println!("was not able to derive kind from buffer: {}", buffer);
