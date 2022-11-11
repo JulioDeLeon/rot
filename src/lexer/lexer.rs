@@ -8,9 +8,10 @@ https://mohitkarekar.com/posts/pl/lexer/
 look at scanner / lexer from code
  */
 
+use std::borrow::Borrow;
 use regex::Regex;
 use crate::lexer::lexer::LexerState::Start;
-use crate::lexer::token::{is_space, build_dictionary, Kind};
+use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind};
 use crate::lexer::token::Token;
 
 // this may not be needed
@@ -24,7 +25,8 @@ pub struct Lexer {
     pub tokens: Vec<Token>,
     buffer: Vec<char>,
     index: usize,
-    dictionary: Vec<(Regex, Kind)>
+    complexDic: Vec<(Regex, Kind)>,
+    simpleDic: Vec<(String, Kind)>
 }
 
 impl Lexer {
@@ -34,7 +36,8 @@ impl Lexer {
             tokens: Vec::new(),
             buffer: buff,
             index: 0,
-            dictionary: build_dictionary()
+            complexDic: build_complex_dictionary(),
+            simpleDic: build_simple_dictionary()
         }
     }
 
@@ -86,9 +89,12 @@ impl Lexer {
     }
 
     fn handle_buffer(&mut self, buffer: &str) {
-        //let t_kind = find_kind(buffer);
-        let t_token = Token::new(Kind::Atom, buffer.clone(), self.index - buffer.len() - 1);
-        self.tokens.push(t_token);
+        if let Some(t_kind) = find_kind(self.complexDic.clone(), self.simpleDic.clone(), buffer) {
+            let t_token = Token::new(t_kind, buffer.clone(), self.index - buffer.len() - 1);
+            self.tokens.push(t_token);
+        } else {
+            println!("was not able to derive kind from buffer: {}", buffer);
+        }
     }
 
     /*

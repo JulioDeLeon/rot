@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
+use std::ops::Deref;
 use regex::Regex;
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Kind {
     // keywords
     Identifier,
@@ -144,7 +145,7 @@ fn is_identifier_char(s: &str) -> bool {
     return identifier_regex.is_match(s);
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     kind: Kind,
     lexeme: String,
@@ -153,9 +154,9 @@ pub struct Token {
 
 impl Token {
     // char array with length?
-    pub(crate) fn new(kind: Kind, text: &str, pos: usize) -> Token {
+    pub(crate) fn new(kindT: Kind, text: &str, pos: usize) -> Token {
         Token {
-            kind,
+            kind: kindT,
             lexeme: text.parse().unwrap(),
             position: pos,
         }
@@ -193,8 +194,12 @@ impl fmt::Display for Token {
     }
 }
 
+type SimpleEntry = (String, Kind);
+type ComplexEntry = (Regex, Kind);
+type SimpleDict = Vec<(String, Kind)>;
+type ComplexDict = Vec<(Regex, Kind)>;
 
-pub fn build_dictionary() -> Vec<(Regex, Kind)> {
+pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
     ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
@@ -213,6 +218,72 @@ pub fn build_dictionary() -> Vec<(Regex, Kind)> {
     ret.push((Regex::new(r"\+=").unwrap(), Kind::Decrement));
     ret.push((Regex::new(r"<=").unwrap(), Kind::LessThanOrEqual));
     ret.push((Regex::new(r"\+=").unwrap(), Kind::GreaterThanOrEqual));
+
+    return ret;
+}
+
+pub fn build_simple_dictionary() -> SimpleDict {
+    let mut ret: Vec<(String, Kind)> = Vec::new();
+    ret.push(("(".to_string() , Kind::LeftParen));
+    ret.push((")".to_string() , Kind::RightParen));
+    ret.push(("[".to_string() , Kind::LeftBracket));
+    ret.push(("]".to_string() , Kind::RightBracket));
+    ret.push(("{".to_string() , Kind::LeftCurly));
+    ret.push(("}".to_string() , Kind::RightCurly));
+    ret.push(("<".to_string() , Kind:: LessThan));
+    ret.push((">".to_string() , Kind::GreaterThan));
+    ret.push(("|".to_string() , Kind::Pipe));
+    ret.push(("=".to_string() , Kind::Equal));
+    ret.push(("+".to_string() , Kind::Plus));
+    ret.push(("-".to_string() , Kind::Minus));
+    ret.push(("*".to_string() , Kind::Asterisk));
+    ret.push(("?".to_string() , Kind::Question));
+    ret.push(("!".to_string() , Kind::Exclaim));
+    ret.push(("&".to_string() , Kind::Ampersand));
+    ret.push(("/".to_string() , Kind::Slash));
+    ret.push(("#".to_string() , Kind::Hash));
+    ret.push((",".to_string() , Kind::Comma));
+    ret.push((".".to_string() , Kind::Dot));
+    ret.push(("\"".to_string() , Kind::SingleQuote));
+    ret.push(("\"".to_string() , Kind::DoubleQuote));
+    ret.push(("\0".to_string() , Kind::End));
+    return ret;
+}
+
+fn simple_eval_kind(expr: (String, Kind), input: &str) -> Option<Kind> {
+    let (pattern, kind) = expr;
+    return if input == pattern {
+        Some(kind)
+    } else {
+        None
+    };
+}
+
+fn complex_eval_kind(expr: (Regex, Kind), input: &str) -> Option<Kind> {
+    let (regex, kind) = expr;
+    return if regex.is_match(input) {
+        Some(kind)
+    } else {
+        None
+    };
+}
+
+pub fn find_kind(complexDict: Vec<(Regex, Kind)>, simpleDictionary: Vec<(String, Kind)>, input: &str) -> Option<Kind> {
+    let mut ret = None;
+
+    for entry in complexDict {
+        let check = complex_eval_kind(entry, input);
+        if check != None {
+            return check;
+        }
+    }
+
+    for entry in simpleDictionary {
+        let check = simple_eval_kind(entry, input);
+        if check != None {
+            return check;
+        }
+    }
 
     return ret;
 }
