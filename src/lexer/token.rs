@@ -202,5 +202,17 @@ pub fn build_dictionary() -> Vec<(Regex, Kind)> {
     ret.push((Regex::new(r"[0-9]+").unwrap(), Kind::IntLiteral));
     ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
 
+    //ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
+    // advanced operators
+    ret.push((Regex::new(r"\?:").unwrap(), Kind::Elvis));
+    ret.push((Regex::new(r"\|\|").unwrap(), Kind::LogicalOr));
+    ret.push((Regex::new(r"&&").unwrap(), Kind::LogicalAnd));
+    ret.push((Regex::new(r"==").unwrap(), Kind::IsEqual));
+    ret.push((Regex::new(r"!=").unwrap(), Kind::NotEqual));
+    ret.push((Regex::new(r"-=").unwrap(), Kind::Increment));
+    ret.push((Regex::new(r"\+=").unwrap(), Kind::Decrement));
+    ret.push((Regex::new(r"<=").unwrap(), Kind::LessThanOrEqual));
+    ret.push((Regex::new(r"\+=").unwrap(), Kind::GreaterThanOrEqual));
+
     return ret;
 }
