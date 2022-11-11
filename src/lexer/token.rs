@@ -136,16 +136,6 @@ pub fn is_space(s: &str) -> bool {
     return space_regex.is_match(s);
 }
 
-pub fn is_digit(s: &str) -> bool {
-    let number_regex: Regex = Regex::new(r"\d").unwrap();
-    return number_regex.is_match(s);
-}
-
-fn is_identifier_char(s: &str) -> bool {
-    let identifier_regex: Regex = Regex::new(r"^[a-zA-Z-1-9_]*$").unwrap();
-    return identifier_regex.is_match(s);
-}
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     kind: Kind,
@@ -255,6 +245,7 @@ pub fn build_simple_dictionary() -> SimpleDict {
     ret.push(("\"".to_string() , Kind::SingleQuote));
     ret.push(("\"".to_string() , Kind::DoubleQuote));
     ret.push(("\0".to_string() , Kind::End));
+    ret.push(("def".to_string(), Kind::Def));
     return ret;
 }
 
