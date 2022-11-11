@@ -8,8 +8,9 @@ https://mohitkarekar.com/posts/pl/lexer/
 look at scanner / lexer from code
  */
 
+use regex::Regex;
 use crate::lexer::lexer::LexerState::Start;
-use crate::lexer::token::{find_kind, is_space, Kind};
+use crate::lexer::token::{is_space, build_dictionary, Kind};
 use crate::lexer::token::Token;
 
 // this may not be needed
@@ -22,7 +23,8 @@ pub struct Lexer {
     state: LexerState,
     pub tokens: Vec<Token>,
     buffer: Vec<char>,
-    index: usize
+    index: usize,
+    dictionary: Vec<(Regex, Kind)>
 }
 
 impl Lexer {
@@ -31,7 +33,8 @@ impl Lexer {
             state: Start,
             tokens: Vec::new(),
             buffer: buff,
-            index: 0
+            index: 0,
+            dictionary: build_dictionary()
         }
     }
 
@@ -83,8 +86,8 @@ impl Lexer {
     }
 
     fn handle_buffer(&mut self, buffer: &str) {
-        let t_kind = find_kind(buffer);
-        let t_token = Token::new(t_kind, buffer.clone(), self.index - buffer.len() - 1);
+        //let t_kind = find_kind(buffer);
+        let t_token = Token::new(Kind::Atom, buffer.clone(), self.index - buffer.len() - 1);
         self.tokens.push(t_token);
     }
 
