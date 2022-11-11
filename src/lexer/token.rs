@@ -203,7 +203,7 @@ pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
     ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
-    ret.push((Regex::new(r"\/\*(\*(?!\/)|[^*])*\*\/").unwrap(), Kind::Comment));
+    ret.push((Regex::new(r"/\*(\*(?!\/)|[^*])*\*/").unwrap(), Kind::Comment));
     ret.push((Regex::new(r"[0-9]+").unwrap(), Kind::IntLiteral));
     ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
 
