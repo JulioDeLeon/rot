@@ -67,27 +67,26 @@ impl Lexer {
         self.index += 1;
     }
 
-    fn dec(&mut self) {
-        self.index -= 1;
-    }
-
     pub fn parse(&mut self) {
         let mut t_buf: String = "".to_owned();
         while let check = self.get() {
             match check {
                 Ok(c) => {
+                    if is_space(&c.to_string()) {
+                        if !t_buf.is_empty() {
+                            self.handle_buffer(&t_buf);
+                        }
+
+                        t_buf = "".to_owned();
+                    } else {
+                        t_buf.push(c);
+                    }
+
+                    self.line_position += 1;
                     if c == '\n' {
                         self.line_number += 1;
                         self.line_position = 0;
-                    } else {
-                        self.line_position += 1;
                     }
-                    if is_space(&c.to_string()) {
-                        self.handle_buffer(&t_buf);
-                        t_buf = "".to_owned();
-                        continue;
-                    }
-                    t_buf.push(c);
                     ()
                 }
                 Err(msg) => {
@@ -104,7 +103,7 @@ impl Lexer {
                 t_kind,
                 buffer.clone(),
                 self.line_number,
-                self.line_position - buffer.len() - 1);
+                self.line_position - buffer.len());
             self.tokens.push(t_token);
         } else {
             println!("was not able to derive kind from buffer: {}", buffer);

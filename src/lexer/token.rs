@@ -125,6 +125,7 @@ impl fmt::Display for Kind {
             Kind::Ampersand => write!(f, "Ampersand"),
             Kind::Atom => write!(f, "Atom"),
             Kind::WhiteSpace => write!(f, "Space"),
+            Kind::Elvis => write!(f, "Elvis"),
             _ => write!(f, "UNKNOWN CASE")
         }
     }
@@ -212,7 +213,6 @@ pub fn build_complex_dictionary() -> ComplexDict {
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
     ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::Comment));
     ret.push((Regex::new(r"[0-9]+").unwrap(), Kind::IntLiteral));
-    ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
 
     // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
     // advanced operators
@@ -226,6 +226,7 @@ pub fn build_complex_dictionary() -> ComplexDict {
     ret.push((Regex::new(r"<=").unwrap(), Kind::LessThanOrEqual));
     ret.push((Regex::new(r"\+=").unwrap(), Kind::GreaterThanOrEqual));
 
+    ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
     return ret;
 }
 
@@ -278,15 +279,15 @@ fn complex_eval_kind(expr: (Regex, Kind), input: &str) -> Option<Kind> {
 pub fn find_kind(complexDict: Vec<(Regex, Kind)>, simpleDictionary: Vec<(String, Kind)>, input: &str) -> Option<Kind> {
     let mut ret = None;
 
-    for entry in complexDict {
-        let check = complex_eval_kind(entry, input);
+    for entry in simpleDictionary {
+        let check = simple_eval_kind(entry, input);
         if check != None {
             return check;
         }
     }
 
-    for entry in simpleDictionary {
-        let check = simple_eval_kind(entry, input);
+    for entry in complexDict {
+        let check = complex_eval_kind(entry, input);
         if check != None {
             return check;
         }

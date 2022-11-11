@@ -3,7 +3,18 @@ mod lexer;
 fn main() {
     println!("Hello, world!");
 
-    let sample = "some sample string";
+    let sample = r#"def def
+    test
+    sammmple
+    do
+    end
+    ?:
+    ?
+    check
+    {
+    +
+    )
+    "#;
     let mut lex = lexer::lexer::Lexer::new(sample.chars().collect());
     lex.parse();
 
