@@ -11,7 +11,7 @@ look at scanner / lexer from code
 use std::borrow::Borrow;
 use regex::Regex;
 use crate::lexer::lexer::LexerState::Start;
-use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind};
+use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind, SimpleDict, ComplexDict};
 use crate::lexer::token::Token;
 
 // this may not be needed
@@ -27,8 +27,8 @@ pub struct Lexer {
     index: usize,
     line_number: usize,
     line_position: usize,
-    complex_dict: Vec<(Regex, Kind)>,
-    simple_dict: Vec<(String, Kind)>
+    complex_dict: ComplexDict,
+    simple_dict: SimpleDict
 }
 
 impl Lexer {

@@ -43,7 +43,8 @@ pub enum Kind {
     True,
     String,
     Null,
-    Struct,
+    Bool,
+    Char,
 
     // Ord()'s
     LeftParen,
@@ -71,7 +72,6 @@ pub enum Kind {
     Question,
     Exclaim,
     Ampersand,
-    Atom,
     WhiteSpace,
 
     // advance Operators
@@ -96,7 +96,7 @@ impl fmt::Display for Kind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Kind::Comment => write!(f, "Comment"),
-            Kind::IntLiteral => write!(f, "Number"),
+            Kind::IntLiteral => write!(f, "IntLiteral"),
             Kind::Identifier => write!(f, "Identifier"),
             Kind::LeftParen => write!(f, "LeftParen"),
             Kind::RightParen => write!(f, "RightParen"),
@@ -123,10 +123,43 @@ impl fmt::Display for Kind {
             Kind::Question => write!(f, "Question"),
             Kind::Exclaim => write!(f, "Exclaim"),
             Kind::Ampersand => write!(f, "Ampersand"),
-            Kind::Atom => write!(f, "Atom"),
             Kind::WhiteSpace => write!(f, "Space"),
             Kind::Elvis => write!(f, "Elvis"),
-            _ => write!(f, "UNKNOWN CASE")
+            Kind::Do => write!(f, "Do"),
+            Kind::Def => write!(f, "Def"),
+            Kind::DefStruct => write!(f, "DefStruct"),
+            Kind::Return => write!(f, "Return"),
+            Kind::Bool => write!(f, "Bool"),
+            Kind::If => write!(f, "If"),
+            Kind::Else => write!(f, "Else"),
+            Kind::Static => write!(f, "Static"),
+            Kind::For => write!(f, "For"),
+            Kind::While => write!(f, "While"),
+            Kind::Fn => write!(f, "Fn"),
+            Kind::Public => write!(f, "Public"),
+            Kind::Match => write!(f, "Match"),
+            Kind::True => write!(f, "True"),
+            Kind::False => write!(f, "False"),
+            Kind::Double => write!(f, "Double"),
+            Kind::DoubleLiteral => write!(f, "DoubleLiteral"),
+            Kind::DefImpl => write!(f, "DefImpl"),
+            Kind::U8 => write!(f, "U8"),
+            Kind::U16 => write!(f, "U16"),
+            Kind::U32 => write!(f, "U32"),
+            Kind::U64 => write!(f, "U64"),
+            Kind::U128 => write!(f, "U128"),
+            Kind::I8 => write!(f, "I8"),
+            Kind::I16 => write!(f, "I16"),
+            Kind::I32 => write!(f, "I32"),
+            Kind::I64 => write!(f, "I64"),
+            Kind::I128 => write!(f, "I128"),
+            Kind::Char => write!(f, "Char"),
+            Kind::Null => write!(f, "Null"),
+            Kind::Mutable => write!(f, "Mutable"),
+            Kind::Float => write!(f, "Float"),
+            Kind::USize => write!(f, "USize"),
+            Kind::ISize => write!(f, "ISize"),
+            _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE")
         }
     }
 }
@@ -146,12 +179,12 @@ pub struct Token {
 
 impl Token {
     // char array with length?
-    pub(crate) fn new(kindT: Kind, text: &str, linNum: usize, linPos: usize) -> Token {
+    pub(crate) fn new(kind_t: Kind, text: &str, line_num: usize, line_pos: usize) -> Token {
         Token {
-            kind: kindT,
+            kind: kind_t,
             lexeme: text.parse().unwrap(),
-            line_number: linNum,
-            line_position: linPos
+            line_number: line_num,
+            line_position: line_pos
         }
     }
 
@@ -175,10 +208,6 @@ impl Token {
 
         return ret;
     }
-
-    pub fn to_string(&self) -> String {
-        format!("Token[kind: {}, lexme: {}, line: {}, position: {}]", self.kind, self.lexeme, self.line_number, self.line_position)
-    }
 }
 
 impl fmt::Display for Token {
@@ -192,18 +221,16 @@ impl fmt::Display for Token {
     }
 }
 
-type SimpleEntry = (String, Kind);
-type ComplexEntry = (Regex, Kind);
-type SimpleDict = Vec<(String, Kind)>;
-type ComplexDict = Vec<(Regex, Kind)>;
+pub type SimpleDict = HashMap<String, Kind>;
+pub type ComplexDict = Vec<(Regex, Kind)>;
 
 pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
     ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
     ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::Comment));
-    ret.push((Regex::new(r"[0-9]+").unwrap(), Kind::IntLiteral));
-
+    ret.push((Regex::new(r"^[0-9]+$").unwrap(), Kind::IntLiteral));
+    ret.push((Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap(), Kind::DoubleLiteral));
     // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
     // advanced operators
     ret.push((Regex::new(r"\?:").unwrap(), Kind::Elvis));
@@ -221,44 +248,85 @@ pub fn build_complex_dictionary() -> ComplexDict {
 }
 
 pub fn build_simple_dictionary() -> SimpleDict {
-    let mut ret: Vec<(String, Kind)> = Vec::new();
-    ret.push(("(".to_string() , Kind::LeftParen));
-    ret.push((")".to_string() , Kind::RightParen));
-    ret.push(("[".to_string() , Kind::LeftBracket));
-    ret.push(("]".to_string() , Kind::RightBracket));
-    ret.push(("{".to_string() , Kind::LeftCurly));
-    ret.push(("}".to_string() , Kind::RightCurly));
-    ret.push(("<".to_string() , Kind:: LessThan));
-    ret.push((">".to_string() , Kind::GreaterThan));
-    ret.push(("|".to_string() , Kind::Pipe));
-    ret.push(("=".to_string() , Kind::Equal));
-    ret.push(("+".to_string() , Kind::Plus));
-    ret.push(("-".to_string() , Kind::Minus));
-    ret.push(("*".to_string() , Kind::Asterisk));
-    ret.push(("?".to_string() , Kind::Question));
-    ret.push(("!".to_string() , Kind::Exclaim));
-    ret.push(("&".to_string() , Kind::Ampersand));
-    ret.push(("/".to_string() , Kind::Slash));
-    ret.push(("#".to_string() , Kind::Hash));
-    ret.push((",".to_string() , Kind::Comma));
-    ret.push((".".to_string() , Kind::Dot));
-    ret.push(("\"".to_string() , Kind::SingleQuote));
-    ret.push(("\"".to_string() , Kind::DoubleQuote));
-    ret.push(("\0".to_string() , Kind::End));
-    ret.push(("def".to_string(), Kind::Def));
+    //let mut ret: Vec<(String, Kind)> = Vec::new();
+    let mut ret: HashMap<String, Kind> = HashMap::new();
+
+    // generic symbols
+    ret.insert("(".to_string() , Kind::LeftParen);
+    ret.insert(")".to_string() , Kind::RightParen);
+    ret.insert("[".to_string() , Kind::LeftBracket);
+    ret.insert("]".to_string() , Kind::RightBracket);
+    ret.insert("{".to_string() , Kind::LeftCurly);
+    ret.insert("}".to_string() , Kind::RightCurly);
+    ret.insert("<".to_string() , Kind:: LessThan);
+    ret.insert(">".to_string() , Kind::GreaterThan);
+    ret.insert("|".to_string() , Kind::Pipe);
+    ret.insert("=".to_string() , Kind::Equal);
+    ret.insert("+".to_string() , Kind::Plus);
+    ret.insert("-".to_string() , Kind::Minus);
+    ret.insert("*".to_string() , Kind::Asterisk);
+    ret.insert("?".to_string() , Kind::Question);
+    ret.insert("!".to_string() , Kind::Exclaim);
+    ret.insert("&".to_string() , Kind::Ampersand);
+    ret.insert("/".to_string() , Kind::Slash);
+    ret.insert("#".to_string() , Kind::Hash);
+    ret.insert(",".to_string() , Kind::Comma);
+    ret.insert(".".to_string() , Kind::Dot);
+    ret.insert("\"".to_string() , Kind::SingleQuote);
+    ret.insert("\"".to_string() , Kind::DoubleQuote);
+    ret.insert(":".to_string() , Kind::Colon);
+    ret.insert(";".to_string() , Kind::Semicolon);
+
+    // keywords
+    ret.insert("def".to_string(), Kind::Def);
+    ret.insert("defstruct".to_string(), Kind::DefStruct);
+    ret.insert("defimpl".to_string(), Kind::DefImpl);
+    ret.insert("do".to_string(), Kind::Do);
+    ret.insert("fn".to_string(), Kind::Fn);
+    ret.insert("end".to_string(), Kind::End);
+    ret.insert("while".to_string(), Kind::While);
+    ret.insert("for".to_string(), Kind::For);
+    ret.insert("static".to_string(), Kind::Static);
+    ret.insert("public".to_string(), Kind::Public);
+    ret.insert("match".to_string(), Kind::Match);
+    ret.insert("return".to_string(), Kind::Return);
+    ret.insert("mut".to_string(), Kind::Mutable);
+    ret.insert("if".to_string(), Kind::If);
+    ret.insert("else".to_string(), Kind::Else);
+
+    // types / values
+    ret.insert("null".to_string(), Kind::Null);
+    ret.insert("true".to_string(), Kind::True);
+    ret.insert("false".to_string(), Kind::False);
+    ret.insert("boolean".to_string(), Kind::Bool);
+    ret.insert("double".to_string(), Kind::Double);
+    ret.insert("float".to_string(), Kind::Float);
+    ret.insert("char".to_string(), Kind::Char);
+    ret.insert("string".to_string(), Kind::String);
+    ret.insert("u8".to_string(), Kind::U8);
+    ret.insert("u16".to_string(), Kind::U16);
+    ret.insert("u32".to_string(), Kind::U32);
+    ret.insert("u64".to_string(), Kind::U64);
+    ret.insert("u128".to_string(), Kind::U128);
+    ret.insert("i8".to_string(), Kind::I8);
+    ret.insert("i16".to_string(), Kind::I16);
+    ret.insert("i32".to_string(), Kind::I32);
+    ret.insert("i64".to_string(), Kind::I64);
+    ret.insert("i128".to_string(), Kind::I128);
+    ret.insert("usize".to_string(), Kind::USize);
+    ret.insert("isize".to_string(), Kind::ISize);
+
     return ret;
 }
 
-fn simple_eval_kind(expr: (String, Kind), input: &str) -> Option<Kind> {
-    let (pattern, kind) = expr;
-    return if input == pattern {
-        Some(kind)
-    } else {
-        None
-    };
+fn simple_eval_kind(dict: SimpleDict, input: &str) -> Option<Kind> {
+    return match dict.get(input) {
+        None => None,
+        Some(kind_ptr) => Some(kind_ptr.clone())
+    }
 }
 
-fn complex_eval_kind(expr: (Regex, Kind), input: &str) -> Option<Kind> {
+fn complex_eval_kind_h(expr: (Regex, Kind), input: &str) -> Option<Kind> {
     let (regex, kind) = expr;
     return if regex.is_match(input) {
         Some(kind)
@@ -267,21 +335,28 @@ fn complex_eval_kind(expr: (Regex, Kind), input: &str) -> Option<Kind> {
     };
 }
 
-pub fn find_kind(complexDict: Vec<(Regex, Kind)>, simpleDictionary: Vec<(String, Kind)>, input: &str) -> Option<Kind> {
-    let mut ret = None;
-
-    for entry in simpleDictionary {
-        let check = simple_eval_kind(entry, input);
-        if check != None {
-            return check;
+fn complex_eval_kind(dict: ComplexDict, input: &str) -> Option<Kind> {
+    for entry in dict {
+        match complex_eval_kind_h(entry, input) {
+            None => continue,
+            Some(kind) => return Some(kind)
         }
     }
 
-    for entry in complexDict {
-        let check = complex_eval_kind(entry, input);
-        if check != None {
-            return check;
-        }
+    return None;
+}
+
+pub fn find_kind(complex_dict: ComplexDict, simple_dictionary: SimpleDict, input: &str) -> Option<Kind> {
+    let mut ret = None;
+
+    let mut check = simple_eval_kind(simple_dictionary, input);
+    if check != None {
+        return check;
+    }
+
+    check = complex_eval_kind(complex_dict, input);
+    if check != None {
+        return check
     }
 
     return ret;
