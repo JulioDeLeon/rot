@@ -8,16 +8,46 @@ https://mohitkarekar.com/posts/pl/lexer/
 look at scanner / lexer from code
  */
 
+use core::fmt;
 use std::borrow::Borrow;
 use regex::Regex;
 use crate::lexer::lexer::LexerState::Start;
 use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind, SimpleDict, ComplexDict};
 use crate::lexer::token::Token;
 
-// this may not be needed
+#[derive(Clone)]
 enum LexerState {
     Start,
+    StringEval,
+    CommentEval,
+    MultiLnStringEval,
+    MultiLnCommentEval,
+    CharEval,
+    RegexEval,
+    KeywordEval,
+    Error(String),
     End,
+}
+
+impl fmt::Display for LexerState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let LexerState::Error(msg) = self {
+            return write!(f, "{}", format!("LexerState::Error({})", msg))
+        }
+
+        let val = match self {
+            Start => "Start",
+            StringEval => "StringEval",
+            MultiLnStringEval => "MultiLnStringEval",
+            CommentEval => "CommentEval",
+            MultiLnCommentEval => "MultiLnCommentEval",
+            CharEval => "CharEval",
+            RegexEval => "RegexEval",
+            KeywordEval => "KeywordEval",
+            End => "End"
+        };
+        write!(f, "{}", val)
+    }
 }
 
 pub struct Lexer {
@@ -69,6 +99,7 @@ impl Lexer {
 
     pub fn parse(&mut self) {
         let mut t_buf: String = "".to_owned();
+        // while state not end or error
         while let check = self.get() {
             match check {
                 Ok(c) => {
@@ -97,6 +128,25 @@ impl Lexer {
         }
     }
 
+    fn handleState(&mut self, buffer: &str) -> LexerState {
+        let snapshot_state: LexerState = self.state.clone();
+        return match snapshot_state {
+            Start => self.handle_start_state(buffer),
+            KeywordEval => self.handle_keyword_eval(buffer),
+            CommentEval => self.handle_comment_eval(buffer),
+            StringEval => self.handle_string_eval(buffer),
+            MultiLnStringEval => self.handle_multilnstring_eval(buffer),
+            MultiLnCommentEval => self.handle_multilncomment_eval(buffer),
+            CharEval => self.handle_char_eval(buffer),
+            RegexEval=> self.handle_regex_eval(buffer),
+            End => End,
+            LexerState::Error(msg) => {
+                println!("Lexer in error state: {}", LexerState::Error(msg));
+                LexerState::End
+            }
+        }
+    }
+
     fn handle_buffer(&mut self, buffer: &str) {
         if let Some(t_kind) = find_kind(self.complex_dict.clone(), self.simple_dict.clone(), buffer) {
             let t_token = Token::new(
@@ -110,10 +160,35 @@ impl Lexer {
         }
     }
 
-    /*
-        1. take in char stream
-        2. read until end of stream
-            2a. read in char and add to buffer.
-            2b. once a space is encountered, stop adding to buffer then evaluate.
-     */
+    fn handle_start_state(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_comment_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_string_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_multilnstring_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_multilncomment_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_keyword_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_regex_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
+
+    fn handle_char_eval(&mut self, buffer: &str) -> LexerState {
+        LexerState::End
+    }
 }

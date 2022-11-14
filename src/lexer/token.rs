@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::Formatter;
-use std::ops::Deref;
+use std::fmt::{Formatter, write};
 use regex::Regex;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -88,6 +87,10 @@ pub enum Kind {
     // literals
     IntLiteral,
     DoubleLiteral,
+    StringLiteral,
+    CharLiteral,
+    MultiLnStringLiteral,
+    RegexLiteral,
 
     Err(String)
 }
@@ -159,6 +162,7 @@ impl fmt::Display for Kind {
             Kind::Float => write!(f, "Float"),
             Kind::USize => write!(f, "USize"),
             Kind::ISize => write!(f, "ISize"),
+            Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE")
         }
     }
