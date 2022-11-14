@@ -15,7 +15,7 @@ use crate::lexer::lexer::LexerState::Start;
 use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind, SimpleDict, ComplexDict};
 use crate::lexer::token::Token;
 
-#[derive(Clone)]
+#[derive(Eq, Clone)]
 enum LexerState {
     Start,
     StringEval,
@@ -58,7 +58,8 @@ pub struct Lexer {
     line_number: usize,
     line_position: usize,
     complex_dict: ComplexDict,
-    simple_dict: SimpleDict
+    simple_dict: SimpleDict,
+    workspace: String
 }
 
 impl Lexer {
@@ -71,7 +72,8 @@ impl Lexer {
             line_number: 0,
             line_position: 0,
             complex_dict: build_complex_dictionary(),
-            simple_dict: build_simple_dictionary()
+            simple_dict: build_simple_dictionary(),
+            workspace: "".to_owned(),
         }
     }
 
@@ -99,33 +101,23 @@ impl Lexer {
 
     pub fn parse(&mut self) {
         let mut t_buf: String = "".to_owned();
-        // while state not end or error
-        while let check = self.get() {
-            match check {
-                Ok(c) => {
-                    if is_space(&c.to_string()) {
-                        if !t_buf.is_empty() {
-                            self.handle_buffer(&t_buf);
-                        }
-
-                        t_buf = "".to_owned();
-                    } else {
-                        t_buf.push(c);
-                    }
-
-                    self.line_position += 1;
-                    if c == '\n' {
-                        self.line_number += 1;
-                        self.line_position = 0;
-                    }
-                    ()
-                }
-                Err(msg) => {
-                    self.handle_buffer(&t_buf);
-                    break;
-                }
+        while self.state != LexerState::End {
+            let new_state = self.handleState(&t_buf);
+            if let LexerState::Error(msg) = new_state {
+                println!("Encountered an error while parsing: {}", LexerState::Error(msg));
+                break;
             }
+            self.state = new_state
         }
+    }
+
+    pub fn reset(&mut self, buff: Vec<char>) {
+        self.state = Start;
+        self.buffer = buff;
+        self.index = 0;
+        self.line_position = 0;
+        self.line_number = 0;
+        // clear tokens?
     }
 
     fn handleState(&mut self, buffer: &str) -> LexerState {
@@ -161,6 +153,32 @@ impl Lexer {
     }
 
     fn handle_start_state(&mut self, buffer: &str) -> LexerState {
+        while let check = self.get() {
+            match check {
+                Ok(c) => {
+                    if is_space(&c.to_string()) {
+                        if !t_buf.is_empty() {
+                            self.handle_buffer(&t_buf);
+                        }
+
+                        t_buf = "".to_owned();
+                    } else {
+                        t_buf.push(c);
+                    }
+
+                    self.line_position += 1;
+                    if c == '\n' {
+                        self.line_number += 1;
+                        self.line_position = 0;
+                    }
+                    ()
+                }
+                Err(msg) => {
+                    self.handle_buffer(&t_buf);
+                    break;
+                }
+            }
+        }
         LexerState::End
     }
 
