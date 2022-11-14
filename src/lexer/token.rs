@@ -183,7 +183,7 @@ pub struct Token {
 
 impl Token {
     // char array with length?
-    pub(crate) fn new(kind_t: Kind, text: &str, line_num: usize, line_pos: usize) -> Token {
+    pub(crate) fn new(kind_t: Kind, text: String, line_num: usize, line_pos: usize) -> Token {
         Token {
             kind: kind_t,
             lexeme: text.parse().unwrap(),
@@ -323,25 +323,25 @@ pub fn build_simple_dictionary() -> SimpleDict {
     return ret;
 }
 
-fn simple_eval_kind(dict: SimpleDict, input: &str) -> Option<Kind> {
-    return match dict.get(input) {
+fn simple_eval_kind(dict: SimpleDict, input: String) -> Option<Kind> {
+    return match dict.get(&input) {
         None => None,
         Some(kind_ptr) => Some(kind_ptr.clone())
     }
 }
 
-fn complex_eval_kind_h(expr: (Regex, Kind), input: &str) -> Option<Kind> {
+fn complex_eval_kind_h(expr: (Regex, Kind), input: String) -> Option<Kind> {
     let (regex, kind) = expr;
-    return if regex.is_match(input) {
+    return if regex.is_match(&input) {
         Some(kind)
     } else {
         None
     };
 }
 
-fn complex_eval_kind(dict: ComplexDict, input: &str) -> Option<Kind> {
+fn complex_eval_kind(dict: ComplexDict, input: String) -> Option<Kind> {
     for entry in dict {
-        match complex_eval_kind_h(entry, input) {
+        match complex_eval_kind_h(entry, input.clone()) {
             None => continue,
             Some(kind) => return Some(kind)
         }
@@ -350,15 +350,15 @@ fn complex_eval_kind(dict: ComplexDict, input: &str) -> Option<Kind> {
     return None;
 }
 
-pub fn find_kind(complex_dict: ComplexDict, simple_dictionary: SimpleDict, input: &str) -> Option<Kind> {
-    let mut ret = None;
+pub fn find_kind(complex_dict: ComplexDict, simple_dictionary: SimpleDict, input: String) -> Option<Kind> {
+    let ret = None;
 
-    let mut check = simple_eval_kind(simple_dictionary, input);
+    let mut check = simple_eval_kind(simple_dictionary, input.clone());
     if check != None {
         return check;
     }
 
-    check = complex_eval_kind(complex_dict, input);
+    check = complex_eval_kind(complex_dict, input.clone());
     if check != None {
         return check
     }
