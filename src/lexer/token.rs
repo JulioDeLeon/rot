@@ -169,7 +169,7 @@ impl fmt::Display for Kind {
 }
 
 pub fn is_space(s: &str) -> bool {
-    let space_regex: Regex = Regex::new(r"\s").unwrap();
+    let space_regex: Regex = Regex::new(r"^\s+$").unwrap();
     return space_regex.is_match(s);
 }
 
