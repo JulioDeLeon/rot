@@ -53,6 +53,7 @@ impl fmt::Display for LexerState {
     }
 }
 
+#[derive(Clone)]
 pub struct Lexer {
     state: LexerState,
     pub tokens: Vec<Token>,
@@ -92,8 +93,21 @@ impl Lexer {
         };
     }
 
-    fn look_back(&self) -> Option<char> {
-        return self.last;
+    fn look_back(&mut self) -> Option<char> {
+        return self.last.clone();
+    }
+
+    fn is_escaped(&self) -> bool {
+       match self.last {
+           Some(c) => {
+               if c == '\\' {
+                   true
+               } else {
+                   false
+               }
+           }
+           None => false
+       }
     }
 
     fn get(&mut self) -> Result<char, &str> {
@@ -242,15 +256,29 @@ impl Lexer {
     }
 
     fn handle_string_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+
+        match check {
+            Ok(c) => {
+                if c == '"' {
+                    self.handle_escaped_delim(c, StringEval, Start)
+                } else if c == '\n' {
+                    Error("found newline in possible string".to_string())
+                } else {
+                    self.buffer.push(c);
+                    StringEval
+                }
+            },
+            _ => Error("something happened in char_eval".to_string()),
+        }
     }
 
     fn handle_multilnstring_eval(&mut self) -> LexerState {
-        LexerState::End
+        LexerState::Error("multilnstring state TODO".to_string())
     }
 
     fn handle_multilncomment_eval(&mut self) -> LexerState {
-        LexerState::End
+        LexerState::Error("multilncomment state TODO".to_string())
     }
 
     fn handle_keyword_eval(&mut self) -> LexerState {
@@ -291,14 +319,24 @@ impl Lexer {
         }
     }
 
+    fn handle_escaped_delim(&mut self, x: char, escaped_state: LexerState, non_escaped_state: LexerState) -> LexerState {
+        if self.is_escaped() {
+            self.buffer.push(x);
+            escaped_state
+        } else {
+            self.buffer.push(x);
+            self.flush_buffer();
+            non_escaped_state
+        }
+    }
+
     fn handle_regex_eval(&mut self) -> LexerState {
         let check = self.get();
+
         match check {
             Ok(c) => {
                 if c == '"' {
-                    self.buffer.push(c);
-                    self.flush_buffer();
-                    Start
+                    self.handle_escaped_delim(c, RegexEval, Start)
                 } else if c == '\n' {
                     Error("regex eval has seen a new line in regex expression".to_string())
                 } else {
@@ -311,7 +349,21 @@ impl Lexer {
     }
 
     fn handle_char_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+
+        match check {
+            Ok(c) => {
+                if c == '\'' {
+                    self.handle_escaped_delim(c, CharEval, Start)
+                } else if c == '\n' {
+                    Error("found newline in possible char".to_string())
+                } else {
+                    self.buffer.push(c);
+                    CharEval
+                }
+            },
+            _ => Error("something happened in char_eval".to_string()),
+        }
     }
 
     fn handle_numeric_eval(&mut self) -> LexerState {
