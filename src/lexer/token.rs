@@ -126,7 +126,7 @@ impl fmt::Display for Kind {
             Kind::Question => write!(f, "Question"),
             Kind::Exclaim => write!(f, "Exclaim"),
             Kind::Ampersand => write!(f, "Ampersand"),
-            Kind::WhiteSpace => write!(f, "Space"),
+            Kind::WhiteSpace => write!(f, "WhiteSpace"),
             Kind::Elvis => write!(f, "Elvis"),
             Kind::Do => write!(f, "Do"),
             Kind::Def => write!(f, "Def"),
@@ -227,25 +227,26 @@ pub type ComplexDict = Vec<(Regex, Kind)>;
 
 pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
-    ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
-    ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
-    ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::Comment));
+    ret.push((Regex::new(r"^[ \t\r\f]+$").unwrap(), Kind::WhiteSpace));
+    ret.push((Regex::new(r"^#.*\r?\n$").unwrap(), Kind::Comment));
+    ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::MultiLnStringLiteral));
     ret.push((Regex::new(r"^[0-9]+$").unwrap(), Kind::IntLiteral));
+    ret.push((Regex::new(r#"^".*"$"#).unwrap(), Kind::StringLiteral));
     ret.push((
         Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap(),
         Kind::DoubleLiteral,
     ));
     // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
     // advanced operators
-    ret.push((Regex::new(r"\?:").unwrap(), Kind::Elvis));
-    ret.push((Regex::new(r"\|\|").unwrap(), Kind::LogicalOr));
-    ret.push((Regex::new(r"&&").unwrap(), Kind::LogicalAnd));
-    ret.push((Regex::new(r"==").unwrap(), Kind::IsEqual));
-    ret.push((Regex::new(r"!=").unwrap(), Kind::NotEqual));
-    ret.push((Regex::new(r"-=").unwrap(), Kind::Increment));
-    ret.push((Regex::new(r"\+=").unwrap(), Kind::Decrement));
-    ret.push((Regex::new(r"<=").unwrap(), Kind::LessThanOrEqual));
-    ret.push((Regex::new(r"\+=").unwrap(), Kind::GreaterThanOrEqual));
+    ret.push((Regex::new(r"^\?:$").unwrap(), Kind::Elvis));
+    ret.push((Regex::new(r"^\|\|$").unwrap(), Kind::LogicalOr));
+    ret.push((Regex::new(r"^&&$").unwrap(), Kind::LogicalAnd));
+    ret.push((Regex::new(r"^==$").unwrap(), Kind::IsEqual));
+    ret.push((Regex::new(r"^!=$").unwrap(), Kind::NotEqual));
+    ret.push((Regex::new(r"^-=$").unwrap(), Kind::Increment));
+    ret.push((Regex::new(r"^\+=$").unwrap(), Kind::Decrement));
+    ret.push((Regex::new(r"^<=$").unwrap(), Kind::LessThanOrEqual));
+    ret.push((Regex::new(r"^\+=$").unwrap(), Kind::GreaterThanOrEqual));
 
     ret.push((
         Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(),

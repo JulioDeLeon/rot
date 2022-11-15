@@ -45,6 +45,7 @@ fn main() {
     isize
     30278420199
     9900.9
+    "test string"
     "#;
     let mut lex = lexer::lexer::Lexer::new(sample.chars().collect());
     lex.parse();

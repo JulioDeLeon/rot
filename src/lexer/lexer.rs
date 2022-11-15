@@ -261,10 +261,22 @@ impl Lexer {
 
     fn handle_start_state_simple_case(&mut self, x: char) -> LexerState {
         match x {
-            'r' => MaybeRegexEval,
-            '"' => StringEval,
-            '#' => CommentEval,
-            '\'' => CharEval,
+            'r' => {
+                self.buffer.push(x);
+                MaybeRegexEval
+            },
+            '"' => {
+                self.buffer.push(x);
+                StringEval
+            },
+            '#' => {
+                self.buffer.push(x);
+                CommentEval
+            },
+            '\'' => {
+                self.buffer.push(x);
+                CharEval
+            },
             _ => self.handle_general_complex_case(x.clone()),
         }
     }
