@@ -11,12 +11,9 @@ look at scanner / lexer from code
 use crate::lexer::lexer::LexerState::*;
 use crate::lexer::token::Token;
 use crate::lexer::token::{
-    build_complex_dictionary, build_simple_dictionary, find_kind, is_space, ComplexDict, Kind,
-    SimpleDict,
+    build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict,
 };
 use core::fmt;
-use regex::Regex;
-use std::borrow::Borrow;
 
 #[derive(PartialEq, Clone)]
 enum LexerState {
@@ -194,10 +191,10 @@ impl Lexer {
         self.buffer = "".to_string()
     }
 
-    fn handle_start_state_complex_case(&mut self, x: char) -> LexerState {
+    fn handle_general_complex_case(&mut self, x: char) -> LexerState {
         let mut ret = End;
 
-        if is_space(&x.to_string()) {
+        if x.is_whitespace() {
             self.flush_buffer();
             ret = Start
         } else {
@@ -214,7 +211,7 @@ impl Lexer {
             '"' => StringEval,
             '#' => CommentEval,
             '\'' => CharEval,
-            _ => self.handle_start_state_complex_case(x.clone()),
+            _ => self.handle_general_complex_case(x.clone()),
         }
     }
 
@@ -256,14 +253,29 @@ impl Lexer {
     }
 
     fn handle_keyword_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+        match check {
+            Ok(c) => {
+                if c.is_alphanumeric() {
+                    self.buffer.push(c);
+                    KeywordEval
+                } else if c.is_whitespace() {
+                    self.flush_buffer();
+                    Start
+                } else {
+                    self.buffer.push(c);
+                    Error(format!("issue lexing {}", self.buffer))
+                }
+            }
+            _ => Error("something happened in keyword_eval".to_string()),
+        }
     }
 
     fn handle_maybe_regex(&mut self) -> LexerState {
         let check = self.get();
         match check {
             Ok(c) => {
-                if is_space(&c.to_string()) {
+                if c.is_whitespace() {
                     self.flush_buffer();
                     Start
                 } else if c == '"' {

@@ -169,11 +169,6 @@ impl fmt::Display for Kind {
     }
 }
 
-pub fn is_space(s: &str) -> bool {
-    let space_regex: Regex = Regex::new(r"^\s+$").unwrap();
-    return space_regex.is_match(s);
-}
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     kind: Kind,
