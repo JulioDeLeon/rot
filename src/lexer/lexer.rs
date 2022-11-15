@@ -367,6 +367,22 @@ impl Lexer {
     }
 
     fn handle_numeric_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+
+        match check {
+            Ok(c) => {
+                if c.is_numeric() || c == '.' {
+                    self.buffer.push(c);
+                    NumericEval
+                } else if c.is_whitespace() {
+                    self.flush_buffer();
+                    Start
+                } else {
+                    self.buffer.push(c);
+                    Error(format!("issue lexing {}", self.buffer))
+                }
+            }
+            _ => Error("something happened in numeric_eval".to_string()),
+        }
     }
 }
