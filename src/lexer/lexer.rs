@@ -9,7 +9,7 @@ look at scanner / lexer from code
  */
 
 use crate::lexer::lexer::LexerState::*;
-use crate::lexer::token::Token;
+use crate::lexer::token::{is_special_char, Token};
 use crate::lexer::token::{
     build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict,
 };
@@ -68,6 +68,45 @@ pub struct Lexer {
     curr: Option<char>,
 }
 
+impl fmt::Display for Lexer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let last_str = match self.last {
+            None => "None".to_string(),
+            Some(x) => x.to_string()
+        };
+
+
+        let curr_str = match self.curr {
+            None => "None".to_string(),
+            Some(x) => x.to_string()
+        };
+
+
+
+        let msg = format!("lexer[
+       state: {},
+       tokens: <omit>,
+       input: <omit>,
+       index: {},
+       line_number: {},
+       line_position: {},
+       <not printing dicts>,
+       buffer: {},
+       last: {},
+       curr: {},
+       ]",
+                         self.state,
+                         self.index,
+                         self.line_number,
+                         self.line_position,
+                         self.buffer,
+                          last_str,
+                          curr_str
+        );
+       write!(f, "{}", msg)
+    }
+}
+
 impl Lexer {
     pub fn new(buff: Vec<char>) -> Lexer {
         Lexer {
@@ -110,7 +149,7 @@ impl Lexer {
        }
     }
 
-    fn get(&mut self) -> Result<char, &str> {
+    fn get(&mut self) -> Option<char> {
         return if self.index < self.input.len() {
             let ret = self.input[self.index];
 
@@ -129,9 +168,9 @@ impl Lexer {
                 None => (),
             }
 
-            Ok(ret)
+            Some(ret)
         } else {
-            Err("indexing error")
+            None
         };
     }
 
@@ -143,7 +182,7 @@ impl Lexer {
         while self.state != End {
             let new_state = self.handle_state();
             if let Error(msg) = new_state {
-                println!("Encountered an error while parsing: {}", Error(msg));
+                println!("Encountered an error while parsing: {}\nlexer : {}", Error(msg), self);
                 break;
             }
             self.state = new_state
@@ -209,7 +248,7 @@ impl Lexer {
         if x.is_whitespace() {
             self.flush_buffer();
             Start
-        } else if x.is_alphabetic() {
+        } else if x.is_alphabetic() || is_special_char(x) {
             self.buffer.push(x);
             KeywordEval
         } else if x.is_numeric() {
@@ -234,15 +273,15 @@ impl Lexer {
         let check = self.get();
 
         return match check {
-            Ok(c) => self.handle_start_state_simple_case(c.clone()),
-            _ => Error("something happened in start".to_string()),
+            Some(c) => self.handle_start_state_simple_case(c.clone()),
+            None => End,
         };
     }
 
     fn handle_comment_eval(&mut self) -> LexerState {
         let check = self.get();
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c == '\n' {
                     self.flush_buffer();
                     Start
@@ -259,7 +298,7 @@ impl Lexer {
         let check = self.get();
 
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c == '"' {
                     self.handle_escaped_delim(c, StringEval, Start)
                 } else if c == '\n' {
@@ -284,8 +323,8 @@ impl Lexer {
     fn handle_keyword_eval(&mut self) -> LexerState {
         let check = self.get();
         match check {
-            Ok(c) => {
-                if c.is_alphanumeric() {
+            Some(c) => {
+                if c.is_alphanumeric() || is_special_char(c) {
                     self.buffer.push(c);
                     KeywordEval
                 } else if c.is_whitespace() {
@@ -303,7 +342,7 @@ impl Lexer {
     fn handle_maybe_regex(&mut self) -> LexerState {
         let check = self.get();
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c.is_whitespace() {
                     self.flush_buffer();
                     Start
@@ -334,7 +373,7 @@ impl Lexer {
         let check = self.get();
 
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c == '"' {
                     self.handle_escaped_delim(c, RegexEval, Start)
                 } else if c == '\n' {
@@ -352,7 +391,7 @@ impl Lexer {
         let check = self.get();
 
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c == '\'' {
                     self.handle_escaped_delim(c, CharEval, Start)
                 } else if c == '\n' {
@@ -370,7 +409,7 @@ impl Lexer {
         let check = self.get();
 
         match check {
-            Ok(c) => {
+            Some(c) => {
                 if c.is_numeric() || c == '.' {
                     self.buffer.push(c);
                     NumericEval

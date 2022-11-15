@@ -223,6 +223,8 @@ impl fmt::Display for Token {
 pub type SimpleDict = HashMap<String, Kind>;
 pub type ComplexDict = Vec<(Regex, Kind)>;
 
+
+
 pub fn build_complex_dictionary() -> ComplexDict {
     let mut ret: Vec<(Regex, Kind)> = Vec::new();
     ret.push((Regex::new(r"[ \t\r\f]+").unwrap(), Kind::WhiteSpace));
@@ -250,6 +252,12 @@ pub fn build_complex_dictionary() -> ComplexDict {
         Kind::Identifier,
     ));
     return ret;
+}
+
+
+pub fn is_special_char(x: char) -> bool {
+    let haystack = r#"!*)(][}{\|:?/,.;-+<>&"#;
+    haystack.contains(x)
 }
 
 pub fn build_simple_dictionary() -> SimpleDict {
