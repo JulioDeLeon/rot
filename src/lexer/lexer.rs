@@ -192,17 +192,18 @@ impl Lexer {
     }
 
     fn handle_general_complex_case(&mut self, x: char) -> LexerState {
-        let mut ret = End;
-
         if x.is_whitespace() {
             self.flush_buffer();
-            ret = Start
-        } else {
+            Start
+        } else if x.is_alphabetic() {
             self.buffer.push(x);
-            ret = KeywordEval
+            KeywordEval
+        } else if x.is_numeric() {
+            self.buffer.push(x);
+            NumericEval
+        } else {
+            Error("could not determine case".to_string())
         }
-
-        return ret;
     }
 
     fn handle_start_state_simple_case(&mut self, x: char) -> LexerState {
@@ -283,7 +284,7 @@ impl Lexer {
                     RegexEval
                 } else {
                     self.buffer.push(c);
-                    Start
+                    KeywordEval
                 }
             }
             _ => Error("something happened in maybe_regex".to_string()),
@@ -291,7 +292,22 @@ impl Lexer {
     }
 
     fn handle_regex_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+        match check {
+            Ok(c) => {
+                if c == '"' {
+                    self.buffer.push(c);
+                    self.flush_buffer();
+                    Start
+                } else if c == '\n' {
+                    Error("regex eval has seen a new line in regex expression".to_string())
+                } else {
+                    self.buffer.push(c);
+                    RegexEval
+                }
+            }
+            _ => Error("something happened in regex_eval".to_string()),
+        }
     }
 
     fn handle_char_eval(&mut self) -> LexerState {
