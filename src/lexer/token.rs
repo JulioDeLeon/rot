@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Regex, RegexSet};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{write, Formatter};
@@ -252,6 +252,8 @@ pub fn build_complex_dictionary() -> ComplexDict {
         Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(),
         Kind::Identifier,
     ));
+
+
     return ret;
 }
 
