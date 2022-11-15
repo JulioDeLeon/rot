@@ -8,12 +8,15 @@ https://mohitkarekar.com/posts/pl/lexer/
 look at scanner / lexer from code
  */
 
-use core::fmt;
-use std::borrow::Borrow;
-use regex::Regex;
 use crate::lexer::lexer::LexerState::*;
-use crate::lexer::token::{is_space, build_simple_dictionary, build_complex_dictionary, find_kind, Kind, SimpleDict, ComplexDict};
 use crate::lexer::token::Token;
+use crate::lexer::token::{
+    build_complex_dictionary, build_simple_dictionary, find_kind, is_space, ComplexDict, Kind,
+    SimpleDict,
+};
+use core::fmt;
+use regex::Regex;
+use std::borrow::Borrow;
 
 #[derive(PartialEq, Clone)]
 enum LexerState {
@@ -34,7 +37,7 @@ enum LexerState {
 impl fmt::Display for LexerState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Error(msg) = self {
-            return write!(f, "{}", format!("LexerState::Error({})", msg))
+            return write!(f, "{}", format!("LexerState::Error({})", msg));
         }
 
         let val = match self {
@@ -47,7 +50,7 @@ impl fmt::Display for LexerState {
             RegexEval => "RegexEval",
             KeywordEval => "KeywordEval",
             End => "End",
-            _ => "unknown state"
+            _ => "unknown state",
         };
         write!(f, "{}", val)
     }
@@ -56,13 +59,13 @@ impl fmt::Display for LexerState {
 pub struct Lexer {
     state: LexerState,
     pub tokens: Vec<Token>,
-    buffer: Vec<char>,
+    input: Vec<char>,
     index: usize,
     line_number: usize,
     line_position: usize,
     complex_dict: ComplexDict,
     simple_dict: SimpleDict,
-    workspace: String,
+    buffer: String,
     last: Option<char>,
     curr: Option<char>,
 }
@@ -72,29 +75,33 @@ impl Lexer {
         Lexer {
             state: Start,
             tokens: Vec::new(),
-            buffer: buff,
+            input: buff,
             index: 0,
             line_number: 0,
             line_position: 0,
             complex_dict: build_complex_dictionary(),
             simple_dict: build_simple_dictionary(),
-            workspace: "".to_owned(),
+            buffer: "".to_owned(),
             last: None::<char>,
             curr: None::<char>,
         }
     }
 
     fn peek(&self) -> Result<char, &str> {
-        return if self.index < self.buffer.len() {
-            Ok(self.buffer[self.index])
+        return if self.index < self.input.len() {
+            Ok(self.input[self.index])
         } else {
             Err("indexing error")
-        }
+        };
+    }
+
+    fn look_back(&self) -> Option<char> {
+        return self.last;
     }
 
     fn get(&mut self) -> Result<char, &str> {
-        return if self.index < self.buffer.len() {
-            let ret = self.buffer[self.index];
+        return if self.index < self.input.len() {
+            let ret = self.input[self.index];
 
             self.inc();
             self.last = self.curr;
@@ -107,8 +114,8 @@ impl Lexer {
                         self.line_number += 1;
                         self.line_position = 0;
                     }
-                },
-                None => ()
+                }
+                None => (),
             }
 
             Ok(ret)
@@ -123,7 +130,7 @@ impl Lexer {
 
     pub fn parse(&mut self) {
         while self.state != End {
-            let new_state = self.handleState();
+            let new_state = self.handle_state();
             if let Error(msg) = new_state {
                 println!("Encountered an error while parsing: {}", Error(msg));
                 break;
@@ -134,14 +141,14 @@ impl Lexer {
 
     pub fn reset(&mut self, buff: Vec<char>) {
         self.state = Start;
-        self.buffer = buff;
+        self.input = buff;
         self.index = 0;
         self.line_position = 0;
         self.line_number = 0;
         // clear tokens?
     }
 
-    fn handleState(&mut self) -> LexerState {
+    fn handle_state(&mut self) -> LexerState {
         let snapshot_state: LexerState = self.state.clone();
         return match snapshot_state {
             Start => self.handle_start_state(),
@@ -151,46 +158,54 @@ impl Lexer {
             MultiLnStringEval => self.handle_multilnstring_eval(),
             MultiLnCommentEval => self.handle_multilncomment_eval(),
             CharEval => self.handle_char_eval(),
-            MaybeRegexEval=> self.handle_maybe_regex(),
-            RegexEval=> self.handle_regex_eval(),
+            MaybeRegexEval => self.handle_maybe_regex(),
+            RegexEval => self.handle_regex_eval(),
             NumericEval => self.handle_numeric_eval(),
             End => End,
             Error(msg) => {
                 println!("Lexer in error state: {}", Error(msg));
                 End
             }
-        }
+        };
     }
 
     fn handle_buffer(&mut self) {
-        if let Some(t_kind) = find_kind(self.complex_dict.clone(), self.simple_dict.clone(), self.workspace.clone()) {
+        if let Some(t_kind) = find_kind(
+            self.complex_dict.clone(),
+            self.simple_dict.clone(),
+            self.buffer.clone(),
+        ) {
             let t_token = Token::new(
                 t_kind,
-                self.workspace.clone(),
+                self.buffer.clone(),
                 self.line_number,
-                self.line_position - self.workspace.len());
+                self.line_position - self.buffer.len(),
+            );
             self.tokens.push(t_token);
         } else {
-            println!("was not able to derive kind from buffer: {}", self.workspace);
+            println!("was not able to derive kind from buffer: {}", self.buffer);
         }
+    }
+
+    fn flush_buffer(&mut self) {
+        if !self.buffer.is_empty() {
+            self.handle_buffer()
+        }
+        self.buffer = "".to_string()
     }
 
     fn handle_start_state_complex_case(&mut self, x: char) -> LexerState {
         let mut ret = End;
 
         if is_space(&x.to_string()) {
-            if !self.workspace.is_empty() {
-                self.handle_buffer();
-            }
-            self.workspace = "".to_owned();
-
+            self.flush_buffer();
             ret = Start
         } else {
-            self.workspace.push(x);
+            self.buffer.push(x);
             ret = KeywordEval
         }
 
-        return ret
+        return ret;
     }
 
     fn handle_start_state_simple_case(&mut self, x: char) -> LexerState {
@@ -207,15 +222,25 @@ impl Lexer {
         let check = self.get();
 
         return match check {
-            Ok(c) => {
-                self.handle_start_state_simple_case(c.clone())
-            },
-            _ => End
+            Ok(c) => self.handle_start_state_simple_case(c.clone()),
+            _ => Error("something happened in start".to_string()),
         };
     }
 
     fn handle_comment_eval(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+        match check {
+            Ok(c) => {
+                if c == '\n' {
+                    self.flush_buffer();
+                    Start
+                } else {
+                    self.buffer.push(c);
+                    CommentEval
+                }
+            }
+            _ => Error("something happened in comment eval".to_string()),
+        }
     }
 
     fn handle_string_eval(&mut self) -> LexerState {
@@ -235,7 +260,22 @@ impl Lexer {
     }
 
     fn handle_maybe_regex(&mut self) -> LexerState {
-        LexerState::End
+        let check = self.get();
+        match check {
+            Ok(c) => {
+                if is_space(&c.to_string()) {
+                    self.flush_buffer();
+                    Start
+                } else if c == '"' {
+                    self.buffer.push(c);
+                    RegexEval
+                } else {
+                    self.buffer.push(c);
+                    Start
+                }
+            }
+            _ => Error("something happened in maybe_regex".to_string()),
+        }
     }
 
     fn handle_regex_eval(&mut self) -> LexerState {

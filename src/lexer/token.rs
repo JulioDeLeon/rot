@@ -1,7 +1,7 @@
+use regex::Regex;
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::{Formatter, write};
-use regex::Regex;
+use std::fmt::{write, Formatter};
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Kind {
@@ -92,7 +92,7 @@ pub enum Kind {
     MultiLnStringLiteral,
     RegexLiteral,
 
-    Err(String)
+    Err(String),
 }
 
 impl fmt::Display for Kind {
@@ -162,8 +162,9 @@ impl fmt::Display for Kind {
             Kind::Float => write!(f, "Float"),
             Kind::USize => write!(f, "USize"),
             Kind::ISize => write!(f, "ISize"),
+            Kind::StringLiteral => write!(f, "StringLiteral"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
-            _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE")
+            _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
     }
 }
@@ -188,7 +189,7 @@ impl Token {
             kind: kind_t,
             lexeme: text.parse().unwrap(),
             line_number: line_num,
-            line_position: line_pos
+            line_position: line_pos,
         }
     }
 
@@ -204,10 +205,10 @@ impl Token {
         let mut ret: bool = false;
 
         for x in kinds {
-           ret = self.is(x);
-           if ret {
-               break;
-           }
+            ret = self.is(x);
+            if ret {
+                break;
+            }
         }
 
         return ret;
@@ -216,11 +217,10 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "token[kind: {}, lexeme: {}, line_number: {}, line_position: {}]",
-               self.kind,
-               self.lexeme,
-               self.line_number,
-               self.line_position
+        write!(
+            f,
+            "token[kind: {}, lexeme: {}, line_number: {}, line_position: {}]",
+            self.kind, self.lexeme, self.line_number, self.line_position
         )
     }
 }
@@ -234,7 +234,10 @@ pub fn build_complex_dictionary() -> ComplexDict {
     ret.push((Regex::new(r"#.*\r?\n").unwrap(), Kind::Comment));
     ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::Comment));
     ret.push((Regex::new(r"^[0-9]+$").unwrap(), Kind::IntLiteral));
-    ret.push((Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap(), Kind::DoubleLiteral));
+    ret.push((
+        Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap(),
+        Kind::DoubleLiteral,
+    ));
     // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
     // advanced operators
     ret.push((Regex::new(r"\?:").unwrap(), Kind::Elvis));
@@ -247,7 +250,10 @@ pub fn build_complex_dictionary() -> ComplexDict {
     ret.push((Regex::new(r"<=").unwrap(), Kind::LessThanOrEqual));
     ret.push((Regex::new(r"\+=").unwrap(), Kind::GreaterThanOrEqual));
 
-    ret.push((Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(), Kind::Identifier));
+    ret.push((
+        Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(),
+        Kind::Identifier,
+    ));
     return ret;
 }
 
@@ -256,30 +262,30 @@ pub fn build_simple_dictionary() -> SimpleDict {
     let mut ret: HashMap<String, Kind> = HashMap::new();
 
     // generic symbols
-    ret.insert("(".to_string() , Kind::LeftParen);
-    ret.insert(")".to_string() , Kind::RightParen);
-    ret.insert("[".to_string() , Kind::LeftBracket);
-    ret.insert("]".to_string() , Kind::RightBracket);
-    ret.insert("{".to_string() , Kind::LeftCurly);
-    ret.insert("}".to_string() , Kind::RightCurly);
-    ret.insert("<".to_string() , Kind:: LessThan);
-    ret.insert(">".to_string() , Kind::GreaterThan);
-    ret.insert("|".to_string() , Kind::Pipe);
-    ret.insert("=".to_string() , Kind::Equal);
-    ret.insert("+".to_string() , Kind::Plus);
-    ret.insert("-".to_string() , Kind::Minus);
-    ret.insert("*".to_string() , Kind::Asterisk);
-    ret.insert("?".to_string() , Kind::Question);
-    ret.insert("!".to_string() , Kind::Exclaim);
-    ret.insert("&".to_string() , Kind::Ampersand);
-    ret.insert("/".to_string() , Kind::Slash);
-    ret.insert("#".to_string() , Kind::Hash);
-    ret.insert(",".to_string() , Kind::Comma);
-    ret.insert(".".to_string() , Kind::Dot);
-    ret.insert("\"".to_string() , Kind::SingleQuote);
-    ret.insert("\"".to_string() , Kind::DoubleQuote);
-    ret.insert(":".to_string() , Kind::Colon);
-    ret.insert(";".to_string() , Kind::Semicolon);
+    ret.insert("(".to_string(), Kind::LeftParen);
+    ret.insert(")".to_string(), Kind::RightParen);
+    ret.insert("[".to_string(), Kind::LeftBracket);
+    ret.insert("]".to_string(), Kind::RightBracket);
+    ret.insert("{".to_string(), Kind::LeftCurly);
+    ret.insert("}".to_string(), Kind::RightCurly);
+    ret.insert("<".to_string(), Kind::LessThan);
+    ret.insert(">".to_string(), Kind::GreaterThan);
+    ret.insert("|".to_string(), Kind::Pipe);
+    ret.insert("=".to_string(), Kind::Equal);
+    ret.insert("+".to_string(), Kind::Plus);
+    ret.insert("-".to_string(), Kind::Minus);
+    ret.insert("*".to_string(), Kind::Asterisk);
+    ret.insert("?".to_string(), Kind::Question);
+    ret.insert("!".to_string(), Kind::Exclaim);
+    ret.insert("&".to_string(), Kind::Ampersand);
+    ret.insert("/".to_string(), Kind::Slash);
+    ret.insert("#".to_string(), Kind::Hash);
+    ret.insert(",".to_string(), Kind::Comma);
+    ret.insert(".".to_string(), Kind::Dot);
+    ret.insert("\"".to_string(), Kind::SingleQuote);
+    ret.insert("\"".to_string(), Kind::DoubleQuote);
+    ret.insert(":".to_string(), Kind::Colon);
+    ret.insert(";".to_string(), Kind::Semicolon);
 
     // keywords
     ret.insert("def".to_string(), Kind::Def);
@@ -326,8 +332,8 @@ pub fn build_simple_dictionary() -> SimpleDict {
 fn simple_eval_kind(dict: SimpleDict, input: String) -> Option<Kind> {
     return match dict.get(&input) {
         None => None,
-        Some(kind_ptr) => Some(kind_ptr.clone())
-    }
+        Some(kind_ptr) => Some(kind_ptr.clone()),
+    };
 }
 
 fn complex_eval_kind_h(expr: (Regex, Kind), input: String) -> Option<Kind> {
@@ -343,14 +349,18 @@ fn complex_eval_kind(dict: ComplexDict, input: String) -> Option<Kind> {
     for entry in dict {
         match complex_eval_kind_h(entry, input.clone()) {
             None => continue,
-            Some(kind) => return Some(kind)
+            Some(kind) => return Some(kind),
         }
     }
 
     return None;
 }
 
-pub fn find_kind(complex_dict: ComplexDict, simple_dictionary: SimpleDict, input: String) -> Option<Kind> {
+pub fn find_kind(
+    complex_dict: ComplexDict,
+    simple_dictionary: SimpleDict,
+    input: String,
+) -> Option<Kind> {
     let ret = None;
 
     let mut check = simple_eval_kind(simple_dictionary, input.clone());
@@ -360,7 +370,7 @@ pub fn find_kind(complex_dict: ComplexDict, simple_dictionary: SimpleDict, input
 
     check = complex_eval_kind(complex_dict, input.clone());
     if check != None {
-        return check
+        return check;
     }
 
     return ret;
