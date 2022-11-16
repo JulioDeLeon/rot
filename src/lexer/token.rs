@@ -91,7 +91,6 @@ pub enum Kind {
     CharLiteral,
     MultiLnStringLiteral,
     RegexLiteral,
-
     Err(String),
 }
 
@@ -163,6 +162,7 @@ impl fmt::Display for Kind {
             Kind::USize => write!(f, "USize"),
             Kind::ISize => write!(f, "ISize"),
             Kind::StringLiteral => write!(f, "StringLiteral"),
+            Kind::CharLiteral => write!(f, "CharLiteral"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
@@ -215,48 +215,47 @@ impl fmt::Display for Token {
         write!(
             f,
             "token[kind: {}, lexeme: {}, line_number: {}, line_position: {}]",
-            self.kind, self.lexeme, self.line_number, self.line_position
+            self.kind,
+            self.lexeme.trim(),
+            self.line_number,
+            self.line_position
         )
     }
 }
 
 pub type SimpleDict = HashMap<String, Kind>;
-pub type ComplexDict = Vec<(Regex, Kind)>;
-
-
+pub type ComplexDict = (HashMap<usize, Kind>, RegexSet);
 
 pub fn build_complex_dictionary() -> ComplexDict {
-    let mut ret: Vec<(Regex, Kind)> = Vec::new();
-    ret.push((Regex::new(r"^[ \t\r\f]+$").unwrap(), Kind::WhiteSpace));
-    ret.push((Regex::new(r"^#.*\r?\n$").unwrap(), Kind::Comment));
-    ret.push((Regex::new(r#"^""".*"""$\r\n"#).unwrap(), Kind::MultiLnStringLiteral));
-    ret.push((Regex::new(r"^[0-9]+$").unwrap(), Kind::IntLiteral));
-    ret.push((Regex::new(r#"^".*"$"#).unwrap(), Kind::StringLiteral));
-    ret.push((
-        Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap(),
-        Kind::DoubleLiteral,
-    ));
-    // ret.push((Regex::new(r"").unwrap(), Kind::Identifier));
-    // advanced operators
-    ret.push((Regex::new(r"^\?:$").unwrap(), Kind::Elvis));
-    ret.push((Regex::new(r"^\|\|$").unwrap(), Kind::LogicalOr));
-    ret.push((Regex::new(r"^&&$").unwrap(), Kind::LogicalAnd));
-    ret.push((Regex::new(r"^==$").unwrap(), Kind::IsEqual));
-    ret.push((Regex::new(r"^!=$").unwrap(), Kind::NotEqual));
-    ret.push((Regex::new(r"^-=$").unwrap(), Kind::Increment));
-    ret.push((Regex::new(r"^\+=$").unwrap(), Kind::Decrement));
-    ret.push((Regex::new(r"^<=$").unwrap(), Kind::LessThanOrEqual));
-    ret.push((Regex::new(r"^\+=$").unwrap(), Kind::GreaterThanOrEqual));
+    let mut links: Vec<(String, Kind)> = Vec::new();
+    links.push((r"^[ \t\r\f]+$".to_string(), Kind::WhiteSpace));
+    links.push((r"^#.*\n$".to_string(), Kind::Comment));
+    links.push((r#"^""".*"""$\r\n"#.to_string(), Kind::MultiLnStringLiteral));
+    links.push((r"^[0-9]+$".to_string(), Kind::IntLiteral));
+    links.push((r#"^".*"$"#.to_string(), Kind::StringLiteral));
+    links.push((r#"^'.*'$"#.to_string(), Kind::CharLiteral));
+    links.push((r"^[0-9]+(\.[0-9]+)?$".to_string(), Kind::DoubleLiteral));
+    links.push((r"^\?:$".to_string(), Kind::Elvis));
+    links.push((r"^\|\|$".to_string(), Kind::LogicalOr));
+    links.push((r"^&&$".to_string(), Kind::LogicalAnd));
+    links.push((r"^==$".to_string(), Kind::IsEqual));
+    links.push((r"^!=$".to_string(), Kind::NotEqual));
+    links.push((r"^-=$".to_string(), Kind::Increment));
+    links.push((r"^\+=$".to_string(), Kind::Decrement));
+    links.push((r"^<=$".to_string(), Kind::LessThanOrEqual));
+    links.push((r"^\+=$".to_string(), Kind::GreaterThanOrEqual));
+    links.push((r"[a-zA-Z_][a-zA-Z0-9_]*".to_string(), Kind::Identifier));
 
-    ret.push((
-        Regex::new(r"[a-zA-Z_][a-zA-Z0-9_]*").unwrap(),
-        Kind::Identifier,
-    ));
-
-
-    return ret;
+    let mut dict: HashMap<usize, Kind> = HashMap::new();
+    let mut patterns: Vec<String> = Vec::new();
+    for (i, x) in links.iter().enumerate() {
+        let (pattern, kind) = x;
+        dict.insert(i, kind.clone());
+        patterns.push(pattern.to_string())
+    }
+    let set = RegexSet::new(patterns).unwrap();
+    (dict, set)
 }
-
 
 pub fn is_special_char(x: char) -> bool {
     let haystack = r#"!*)(][}{\|:?/,.;-+<>&"#;
@@ -352,14 +351,18 @@ fn complex_eval_kind_h(expr: (Regex, Kind), input: String) -> Option<Kind> {
 }
 
 fn complex_eval_kind(dict: ComplexDict, input: String) -> Option<Kind> {
-    for entry in dict {
-        match complex_eval_kind_h(entry, input.clone()) {
-            None => continue,
-            Some(kind) => return Some(kind),
+    let (translator, reg) = dict;
+    let matches: Vec<_> = reg.matches(&input).into_iter().collect();
+    if matches.is_empty() {
+        None
+    } else {
+        let first = matches[0];
+        let kind_opt = translator.get(&first);
+        match kind_opt {
+            Some(kind) => Some(kind.clone()),
+            None => None,
         }
     }
-
-    return None;
 }
 
 pub fn find_kind(

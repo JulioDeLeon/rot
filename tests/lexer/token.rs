@@ -1,5 +1,5 @@
-use rot::lexer::token::*;
 use regex::RegexSet;
+use rot::lexer::token::*;
 use std::collections::HashMap;
 
 #[test]
@@ -17,16 +17,12 @@ fn test_evaluate_keywords() {
 pub fn test_build_complex_dictionary() {
     let mut ret: Vec<(String, Kind)> = Vec::new();
     ret.push((r"^[ \t\r\f]+$".to_string(), Kind::WhiteSpace));
-    ret.push((r"^#.*\r?\n$".to_string(), Kind::Comment));
+    ret.push((r"^#.*\n$".to_string(), Kind::Comment));
     ret.push((r#"^""".*"""$\r\n"#.to_string(), Kind::MultiLnStringLiteral));
     ret.push((r"^[0-9]+$".to_string(), Kind::IntLiteral));
     ret.push((r#"^".*"$"#.to_string(), Kind::StringLiteral));
-    ret.push((
-        r"^[0-9]+(\.[0-9]+)?$".to_string(),
-        Kind::DoubleLiteral,
-    ));
-    // ret.push((r"".to_string(), Kind::Identifier));
-    // advanced operators
+    ret.push((r#"^'.*'$"#.to_string(), Kind::CharLiteral));
+    ret.push((r"^[0-9]+(\.[0-9]+)?$".to_string(), Kind::DoubleLiteral));
     ret.push((r"^\?:$".to_string(), Kind::Elvis));
     ret.push((r"^\|\|$".to_string(), Kind::LogicalOr));
     ret.push((r"^&&$".to_string(), Kind::LogicalAnd));
@@ -47,18 +43,17 @@ pub fn test_build_complex_dictionary() {
     }
 
     let set = RegexSet::new(patterns).unwrap();
-    let matches: Vec<_> = set.matches(" ").into_iter().collect();
-    assert_eq!(matches, vec![0]);
+    let matches: Vec<_> = set.matches("# comment\n").into_iter().collect();
+    assert_eq!(matches, vec![1, 15]);
     //get first match
     let first_match = matches[0];
     let kind = dict.get(&first_match);
     match kind {
         Some(x) => {
-            assert_eq!(x.clone(), Kind::WhiteSpace)
-        },
+            assert_eq!(x.clone(), Kind::Comment)
+        }
         None => {
             assert_eq!(true, false)
         }
     }
 }
-

@@ -9,10 +9,10 @@ look at scanner / lexer from code
  */
 
 use crate::lexer::lexer::LexerState::*;
-use crate::lexer::token::{is_special_char, Token};
 use crate::lexer::token::{
     build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict,
 };
+use crate::lexer::token::{is_special_char, Token};
 use core::fmt;
 
 #[derive(PartialEq, Clone)]
@@ -72,18 +72,16 @@ impl fmt::Display for Lexer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let last_str = match self.last {
             None => "None".to_string(),
-            Some(x) => x.to_string()
+            Some(x) => x.to_string(),
         };
-
 
         let curr_str = match self.curr {
             None => "None".to_string(),
-            Some(x) => x.to_string()
+            Some(x) => x.to_string(),
         };
 
-
-
-        let msg = format!("lexer[
+        let msg = format!(
+            "lexer[
        state: {},
        tokens: <omit>,
        input: <omit>,
@@ -95,15 +93,15 @@ impl fmt::Display for Lexer {
        last: {},
        curr: {},
        ]",
-                         self.state,
-                         self.index,
-                         self.line_number,
-                         self.line_position,
-                         self.buffer,
-                          last_str,
-                          curr_str
+            self.state,
+            self.index,
+            self.line_number,
+            self.line_position,
+            self.buffer,
+            last_str,
+            curr_str
         );
-       write!(f, "{}", msg)
+        write!(f, "{}", msg)
     }
 }
 
@@ -137,16 +135,16 @@ impl Lexer {
     }
 
     fn is_escaped(&self) -> bool {
-       match self.last {
-           Some(c) => {
-               if c == '\\' {
-                   true
-               } else {
-                   false
-               }
-           }
-           None => false
-       }
+        match self.last {
+            Some(c) => {
+                if c == '\\' {
+                    true
+                } else {
+                    false
+                }
+            }
+            None => false,
+        }
     }
 
     fn get(&mut self) -> Option<char> {
@@ -182,7 +180,11 @@ impl Lexer {
         while self.state != End {
             let new_state = self.handle_state();
             if let Error(msg) = new_state {
-                println!("Encountered an error while parsing: {}\nlexer : {}", Error(msg), self);
+                println!(
+                    "Encountered an error while parsing: {}\nlexer : {}",
+                    Error(msg),
+                    self
+                );
                 break;
             }
             self.state = new_state
@@ -264,19 +266,19 @@ impl Lexer {
             'r' => {
                 self.buffer.push(x);
                 MaybeRegexEval
-            },
+            }
             '"' => {
                 self.buffer.push(x);
                 StringEval
-            },
+            }
             '#' => {
                 self.buffer.push(x);
                 CommentEval
-            },
+            }
             '\'' => {
                 self.buffer.push(x);
                 CharEval
-            },
+            }
             _ => self.handle_general_complex_case(x.clone()),
         }
     }
@@ -295,6 +297,7 @@ impl Lexer {
         match check {
             Some(c) => {
                 if c == '\n' {
+                    self.buffer.push(c);
                     self.flush_buffer();
                     Start
                 } else {
@@ -319,7 +322,7 @@ impl Lexer {
                     self.buffer.push(c);
                     StringEval
                 }
-            },
+            }
             _ => Error("something happened in char_eval".to_string()),
         }
     }
@@ -370,7 +373,12 @@ impl Lexer {
         }
     }
 
-    fn handle_escaped_delim(&mut self, x: char, escaped_state: LexerState, non_escaped_state: LexerState) -> LexerState {
+    fn handle_escaped_delim(
+        &mut self,
+        x: char,
+        escaped_state: LexerState,
+        non_escaped_state: LexerState,
+    ) -> LexerState {
         if self.is_escaped() {
             self.buffer.push(x);
             escaped_state
@@ -412,7 +420,7 @@ impl Lexer {
                     self.buffer.push(c);
                     CharEval
                 }
-            },
+            }
             _ => Error("something happened in char_eval".to_string()),
         }
     }

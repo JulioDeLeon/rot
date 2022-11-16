@@ -46,9 +46,11 @@ fn main() {
     30278420199
     9900.9
     "test string"
+    # this is a comment
+    'a'
     "#;
     let mut lex = lexer::lexer::Lexer::new(sample.chars().collect());
     lex.parse();
 
-    lex.tokens.iter().for_each(| tok | println!("{}", tok));
+    lex.tokens.iter().for_each(|tok| println!("{}", tok));
 }
