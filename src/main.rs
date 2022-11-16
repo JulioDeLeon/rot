@@ -48,6 +48,7 @@ fn main() {
     "test string"
     # this is a comment
     'a'
+    "\""
     "#;
     let mut lex = lexer::lexer::Lexer::new(sample.chars().collect());
     lex.parse();

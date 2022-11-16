@@ -171,8 +171,8 @@ impl fmt::Display for Kind {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Token {
-    kind: Kind,
-    lexeme: String,
+    pub kind: Kind,
+    pub lexeme: String,
     line_number: usize,
     line_position: usize,
 }

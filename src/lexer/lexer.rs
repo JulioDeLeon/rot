@@ -305,7 +305,10 @@ impl Lexer {
                     CommentEval
                 }
             }
-            _ => Error("something happened in comment eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -323,7 +326,10 @@ impl Lexer {
                     StringEval
                 }
             }
-            _ => Error("something happened in char_eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -350,7 +356,10 @@ impl Lexer {
                     Error(format!("issue lexing {}", self.buffer))
                 }
             }
-            _ => Error("something happened in keyword_eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -369,7 +378,10 @@ impl Lexer {
                     KeywordEval
                 }
             }
-            _ => Error("something happened in maybe_regex".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -403,7 +415,10 @@ impl Lexer {
                     RegexEval
                 }
             }
-            _ => Error("something happened in regex_eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -421,7 +436,10 @@ impl Lexer {
                     CharEval
                 }
             }
-            _ => Error("something happened in char_eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 
@@ -441,7 +459,10 @@ impl Lexer {
                     Error(format!("issue lexing {}", self.buffer))
                 }
             }
-            _ => Error("something happened in numeric_eval".to_string()),
+            _ => {
+                self.flush_buffer();
+                Start
+            }
         }
     }
 }
