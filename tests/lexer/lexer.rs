@@ -86,6 +86,7 @@ fn test_keyword_lex() {
 fn test_comment_lex() {
     lexer_helper("# some comment\n".to_string(), Kind::Comment);
     //lexer_helper("# some comment".to_string(), Kind::Comment);
+    // TODO: need to do multiline comments
 }
 
 #[test]
@@ -97,4 +98,15 @@ fn test_numerical_lex() {
 #[test]
 fn test_string_lex() {
     lexer_helper("\"some string to evel\"".to_string(), Kind::StringLiteral);
+    // TODO: need to do multiline strings
+}
+
+#[test]
+fn test_symbol_lex() {
+    lexer_helper("?:".to_string(), Kind::Elvis)
+}
+
+#[test]
+fn test_regex_literal() {
+    lexer_helper("r\"some regex\"".to_string(), Kind::RegexLiteral)
 }

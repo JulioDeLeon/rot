@@ -163,6 +163,7 @@ impl fmt::Display for Kind {
             Kind::ISize => write!(f, "ISize"),
             Kind::StringLiteral => write!(f, "StringLiteral"),
             Kind::CharLiteral => write!(f, "CharLiteral"),
+            Kind::RegexLiteral => write!(f, "RegexLiteral"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
@@ -234,6 +235,7 @@ pub fn build_complex_dictionary() -> ComplexDict {
     links.push((r"^[0-9]+$".to_string(), Kind::IntLiteral));
     links.push((r#"^".*"$"#.to_string(), Kind::StringLiteral));
     links.push((r#"^'.*'$"#.to_string(), Kind::CharLiteral));
+    links.push((r#"^r".*"$"#.to_string(), Kind::RegexLiteral));
     links.push((r"^[0-9]+(\.[0-9]+)?$".to_string(), Kind::DoubleLiteral));
     links.push((r"^\?:$".to_string(), Kind::Elvis));
     links.push((r"^\|\|$".to_string(), Kind::LogicalOr));
