@@ -27,6 +27,7 @@ enum LexerState {
     MaybeRegexEval,
     RegexEval,
     KeywordEval,
+    SpecialEval,
     Error(String),
     End,
 }
@@ -46,6 +47,7 @@ impl fmt::Display for LexerState {
             CharEval => "CharEval",
             RegexEval => "RegexEval",
             KeywordEval => "KeywordEval",
+            SpecialEval => "SpecialEval",
             End => "End",
             _ => "unknown state",
         };
@@ -122,11 +124,11 @@ impl Lexer {
         }
     }
 
-    fn peek(&self) -> Result<char, &str> {
+    fn peek(&self) -> Option<char> {
         return if self.index < self.input.len() {
-            Ok(self.input[self.index])
+            Some(self.input[self.index])
         } else {
-            Err("indexing error")
+            None
         };
     }
 
@@ -187,6 +189,7 @@ impl Lexer {
                 );
                 break;
             }
+
             self.state = new_state
         }
     }
@@ -213,6 +216,7 @@ impl Lexer {
             MaybeRegexEval => self.handle_maybe_regex(),
             RegexEval => self.handle_regex_eval(),
             NumericEval => self.handle_numeric_eval(),
+            SpecialEval => self.handle_special_eval(),
             End => End,
             Error(msg) => {
                 println!("Lexer in error state: {}", Error(msg));
@@ -240,6 +244,7 @@ impl Lexer {
     }
 
     fn flush_buffer(&mut self) {
+        dbg!(format!("flushing buffer: <{}>", self.clone().buffer));
         if !self.buffer.is_empty() {
             self.handle_buffer()
         }
@@ -250,12 +255,15 @@ impl Lexer {
         if x.is_whitespace() {
             self.flush_buffer();
             Start
-        } else if x.is_alphabetic() || is_special_char(x) {
+        } else if x.is_alphabetic() {
             self.buffer.push(x);
             KeywordEval
         } else if x.is_numeric() {
             self.buffer.push(x);
             NumericEval
+        } else if is_special_char(x) {
+            self.buffer.push(x);
+            SpecialEval
         } else {
             Error("could not determine case".to_string())
         }
@@ -280,6 +288,30 @@ impl Lexer {
                 CharEval
             }
             _ => self.handle_general_complex_case(x.clone()),
+        }
+    }
+
+    fn guess_complex_case(&mut self, x: char) -> LexerState {
+        if x.is_whitespace() {
+            Start
+        } else if x.is_alphabetic() {
+            KeywordEval
+        } else if x.is_numeric() {
+            NumericEval
+        } else if is_special_char(x) {
+            SpecialEval
+        } else {
+            Error("could not determine case, should log state of lexer here".to_string())
+        }
+    }
+
+    fn guess_next_state(&mut self, x: char) -> LexerState {
+        match x {
+            'r' => MaybeRegexEval,
+            '"' => StringEval,
+            '#' => CommentEval,
+            '\'' => CharEval,
+            _ => self.guess_complex_case(x.clone()),
         }
     }
 
@@ -345,9 +377,13 @@ impl Lexer {
         let check = self.get();
         match check {
             Some(c) => {
-                if c.is_alphanumeric() || is_special_char(c) {
+                if c.is_alphanumeric() {
                     self.buffer.push(c);
                     KeywordEval
+                } else if is_special_char(c) {
+                    self.flush_buffer();
+                    self.buffer.push(c);
+                    SpecialEval
                 } else if c.is_whitespace() {
                     self.flush_buffer();
                     Start
@@ -457,6 +493,48 @@ impl Lexer {
                 } else {
                     self.buffer.push(c);
                     Error(format!("issue lexing {}", self.buffer))
+                }
+            }
+            _ => {
+                self.flush_buffer();
+                Start
+            }
+        }
+    }
+
+    fn handle_special_eval(&mut self) -> LexerState {
+        //we are here since there is a special character in the buffer.
+        let check = self.get();
+        let (nc, next_special) = match self.clone().peek() {
+            None => ('-', false),
+            Some(c) => (c, is_special_char(c)),
+        };
+        let possible_next_state = match self.clone().peek() {
+            None => Start,
+            Some(c) => self.clone().guess_next_state(c),
+        };
+        match check {
+            Some(c) => {
+                println!(
+                    "within special eval - curr: {}, next: {}, next state: {}",
+                    c, nc, possible_next_state
+                );
+
+                if is_special_char(c) && next_special {
+                    self.flush_buffer();
+                    self.buffer.push(c);
+                    SpecialEval
+                } else if is_special_char(c) && !next_special {
+                    self.flush_buffer();
+                    self.buffer.push(c);
+                    possible_next_state
+                } else if c.is_whitespace() {
+                    self.flush_buffer();
+                    Start
+                } else {
+                    self.flush_buffer();
+                    self.buffer.push(c);
+                    Start
                 }
             }
             _ => {

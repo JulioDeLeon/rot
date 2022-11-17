@@ -1,5 +1,5 @@
 use rot::lexer::lexer::Lexer;
-use rot::lexer::token::{build_complex_dictionary, build_simple_dictionary, Kind};
+use rot::lexer::token::Kind;
 
 #[test]
 fn test_complex_evaluation() {

@@ -1,7 +1,7 @@
 use regex::{Regex, RegexSet};
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::{write, Formatter};
+use std::fmt::Formatter;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Kind {
@@ -164,6 +164,7 @@ impl fmt::Display for Kind {
             Kind::StringLiteral => write!(f, "StringLiteral"),
             Kind::CharLiteral => write!(f, "CharLiteral"),
             Kind::RegexLiteral => write!(f, "RegexLiteral"),
+            Kind::MultiLnStringLiteral => write!(f, "MultiLnStringLiteral"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
@@ -340,15 +341,6 @@ fn simple_eval_kind(dict: SimpleDict, input: String) -> Option<Kind> {
     return match dict.get(&input) {
         None => None,
         Some(kind_ptr) => Some(kind_ptr.clone()),
-    };
-}
-
-fn complex_eval_kind_h(expr: (Regex, Kind), input: String) -> Option<Kind> {
-    let (regex, kind) = expr;
-    return if regex.is_match(&input) {
-        Some(kind)
-    } else {
-        None
     };
 }
 
