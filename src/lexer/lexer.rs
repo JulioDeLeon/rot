@@ -553,6 +553,7 @@ impl Lexer {
 
                 match combined_kind {
                     Some(_)=> {
+                        dbg!(format!("flushing buffer: <{}>", temp_buff_state.clone()));
                         // treat together
                         let tok = generate_special_token(combined_kind.clone(), temp_buff_state.clone(), ln, pos);
                         self.tokens.push(tok);
@@ -560,8 +561,10 @@ impl Lexer {
                     },
                     None => {
                         // treat separately
+                        dbg!(format!("flushing buffer: <{}>", self.buffer.clone()));
                         let mut tok = generate_special_token(current_kind, self.buffer.clone(), ln, pos - 1);
                         self.tokens.push(tok.clone());
+                        dbg!(format!("flushing buffer: <{}>", c.to_string()));
                         tok = generate_special_token(next_kind, c.to_string(), ln, pos);
                         self.tokens.push(tok.clone());
                         self.buffer = "".to_string();
