@@ -261,7 +261,7 @@ pub fn build_complex_dictionary() -> ComplexDict {
 }
 
 pub fn is_special_char(x: char) -> bool {
-    let haystack = r#"!*)(][}{\|:?/,.;-+<>&"#;
+    let haystack = r#"!*)(][}{\|:?/,.;-+<>&="#;
     haystack.contains(x)
 }
 
