@@ -1,13 +1,3 @@
-/*
-scan an string input?
-parse input
-return list of tokens
-
-https://mohitkarekar.com/posts/pl/lexer/
-
-look at scanner / lexer from code
- */
-
 use crate::lexer::lexer::LexerState::*;
 use crate::lexer::token::{
     build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict,
@@ -505,6 +495,18 @@ impl Lexer {
     fn handle_special_eval(&mut self) -> LexerState {
         //we are here since there is a special character in the buffer.
         let check = self.get();
+        /*
+        maybe do a peek an not a got
+        if not special flush buff
+        add char to buffer
+        determine state by evaluating character.
+
+        if special, get()
+        then attempt to see if buffer + new char is a special operation or 2 seperate operations
+            this would be in a special flush
+        next state would be start
+        */
+
         let (nc, next_special) = match self.clone().peek() {
             None => ('-', false),
             Some(c) => (c, is_special_char(c)),
