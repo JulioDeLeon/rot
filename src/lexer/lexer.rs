@@ -1,7 +1,5 @@
 use crate::lexer::lexer::LexerState::*;
-use crate::lexer::token::{
-    build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict,
-};
+use crate::lexer::token::{build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict, Kind};
 use crate::lexer::token::{is_special_char, Token};
 use core::fmt;
 
@@ -494,51 +492,85 @@ impl Lexer {
 
     fn handle_special_eval(&mut self) -> LexerState {
         //we are here since there is a special character in the buffer.
-        let check = self.get();
-        /*
-        maybe do a peek an not a got
-        if not special flush buff
-        add char to buffer
-        determine state by evaluating character.
+        // if current char is last in input, flush and go back to start
+        let mut next_char = self.clone().peek();
+        if next_char == None {
+            self.flush_buffer();
+            return Start;
+        }
 
-        if special, get()
-        then attempt to see if buffer + new char is a special operation or 2 seperate operations
-            this would be in a special flush
-        next state would be start
-        */
-
-        let (nc, next_special) = match self.clone().peek() {
-            None => ('-', false),
-            Some(c) => (c, is_special_char(c)),
+        // if we see another char, check if its special char
+        // if not, flush buffer but leave next char in input for start to handle
+        let next_is_special = match next_char {
+            None => false,
+            Some(c) => is_special_char(c)
         };
-        let possible_next_state = match self.clone().peek() {
-            None => Start,
-            Some(c) => self.clone().guess_next_state(c),
-        };
-        match check {
-            Some(c) => {
-                println!(
-                    "within special eval - curr: {}, next: {}, next state: {}",
-                    c, nc, possible_next_state
-                );
+        if !next_is_special {
+            self.flush_buffer();
+            return Start;
+        }
 
-                if is_special_char(c) && next_special {
-                    self.flush_buffer();
-                    self.buffer.push(c);
-                    SpecialEval
-                } else if is_special_char(c) && !next_special {
-                    self.flush_buffer();
-                    self.buffer.push(c);
-                    possible_next_state
-                } else if c.is_whitespace() {
-                    self.flush_buffer();
-                    Start
-                } else {
-                    self.flush_buffer();
-                    self.buffer.push(c);
-                    Start
+        let cdict = self.complex_dict.clone();
+        let sdict = self.simple_dict.clone();
+        let find_kind_h = |s: String| -> Option<Kind> {
+            find_kind(cdict.clone(), sdict.clone(),s).clone()
+        };
+
+        let generate_special_token = |t_kind: Option<Kind>, payload: String, ln: usize, pos: usize| -> Token {
+            match t_kind {
+                None => {
+                    Token::new(
+                        Kind::Err(format!("could not determine kind of {}", payload)),
+                        payload.clone(),
+                        ln,
+                        // this '-1' is needed for the offset of the get()
+                        pos,
+                    )
+                },
+                Some(kind) => {
+                    Token::new(
+                        kind,
+                        payload.clone(),
+                        ln,
+                        pos,
+                    )
                 }
             }
+        };
+
+        let mut temp_buff_state = self.buffer.clone();
+        let current_kind = find_kind_h(temp_buff_state.clone());
+
+        next_char = self.get();
+        let ln = self.line_number.clone();
+        let pos = self.line_position - temp_buff_state.len();
+        match next_char {
+            Some(c) => {
+                // check if both chars combined make a operator
+                temp_buff_state.push(c);
+                let combined_kind = find_kind_h(temp_buff_state.clone());
+                let next_kind = find_kind_h(c.to_string());
+
+                match combined_kind {
+                    Some(_)=> {
+                        // treat together
+                        let tok = generate_special_token(combined_kind.clone(), temp_buff_state.clone(), ln, pos);
+                        self.tokens.push(tok);
+                        self.buffer = "".to_string();
+                    },
+                    None => {
+                        // treat separately
+                        let mut tok = generate_special_token(current_kind, self.buffer.clone(), ln, pos - 1);
+                        self.tokens.push(tok.clone());
+                        tok = generate_special_token(next_kind, c.to_string(), ln, pos);
+                        self.tokens.push(tok.clone());
+                        self.buffer = "".to_string();
+                    }
+                }
+
+                // go back to start regardless
+                Start
+            },
             _ => {
                 self.flush_buffer();
                 Start
