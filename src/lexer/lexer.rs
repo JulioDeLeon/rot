@@ -223,7 +223,7 @@ impl Lexer {
                 t_kind,
                 self.buffer.clone(),
                 self.line_number,
-                self.line_position - self.buffer.len(),
+                1 + self.line_position - self.buffer.len(),
             );
             self.tokens.push(t_token);
         } else {
