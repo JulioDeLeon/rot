@@ -1,7 +1,7 @@
 use regex::{Regex, RegexSet};
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{write, Formatter};
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Kind {
@@ -165,6 +165,14 @@ impl fmt::Display for Kind {
             Kind::CharLiteral => write!(f, "CharLiteral"),
             Kind::RegexLiteral => write!(f, "RegexLiteral"),
             Kind::MultiLnStringLiteral => write!(f, "MultiLnStringLiteral"),
+            Kind::IsEqual => write!(f, "IsEqual"),
+            Kind::NotEqual => write!(f, "NotEqual"),
+            Kind::LogicalAnd => write!(f, "LogicalAnd"),
+            Kind::LogicalOr => write!(f, "LogicalOr"),
+            Kind::Increment => write!(f, "Increment"),
+            Kind::Decrement => write!(f, "Decrement"),
+            Kind::LessThanOrEqual => write!(f, "LessThanOrEqual"),
+            Kind::GreaterThanOrEqual => write!(f, "GreaterThanOrEqual"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
