@@ -122,10 +122,6 @@ impl Lexer {
         };
     }
 
-    fn look_back(&mut self) -> Option<char> {
-        return self.last.clone();
-    }
-
     fn is_escaped(&self) -> bool {
         match self.last {
             Some(c) => {

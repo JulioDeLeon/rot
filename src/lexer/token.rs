@@ -1,7 +1,7 @@
-use regex::{Regex, RegexSet};
+use regex::RegexSet;
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::{write, Formatter};
+use std::fmt::Formatter;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Kind {
@@ -198,27 +198,6 @@ impl Token {
             line_number: line_num,
             line_position: line_pos,
         }
-    }
-
-    fn is(&self, kind: Kind) -> bool {
-        return self.kind == kind;
-    }
-
-    fn is_not(&self, kind: Kind) -> bool {
-        return self.kind != kind;
-    }
-
-    fn is_one_of(&self, kinds: Vec<Kind>) -> bool {
-        let mut ret: bool = false;
-
-        for x in kinds {
-            ret = self.is(x);
-            if ret {
-                break;
-            }
-        }
-
-        return ret;
     }
 }
 
