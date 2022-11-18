@@ -287,30 +287,6 @@ impl Lexer {
         }
     }
 
-    fn guess_complex_case(&mut self, x: char) -> LexerState {
-        if x.is_whitespace() {
-            Start
-        } else if x.is_alphabetic() {
-            KeywordEval
-        } else if x.is_numeric() {
-            NumericEval
-        } else if is_special_char(x) {
-            SpecialEval
-        } else {
-            Error("could not determine case, should log state of lexer here".to_string())
-        }
-    }
-
-    fn guess_next_state(&mut self, x: char) -> LexerState {
-        match x {
-            'r' => MaybeRegexEval,
-            '"' => StringEval,
-            '#' => CommentEval,
-            '\'' => CharEval,
-            _ => self.guess_complex_case(x.clone()),
-        }
-    }
-
     fn handle_start_state(&mut self) -> LexerState {
         let check = self.get();
 
