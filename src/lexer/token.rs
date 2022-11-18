@@ -83,6 +83,7 @@ pub enum Kind {
     Increment,
     Decrement,
     Elvis,
+    Arrow,
 
     // literals
     IntLiteral,
@@ -173,6 +174,7 @@ impl fmt::Display for Kind {
             Kind::Decrement => write!(f, "Decrement"),
             Kind::LessThanOrEqual => write!(f, "LessThanOrEqual"),
             Kind::GreaterThanOrEqual => write!(f, "GreaterThanOrEqual"),
+            Kind::Arrow => write!(f, "Arrow"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
         }
@@ -255,6 +257,7 @@ pub fn build_complex_dictionary() -> ComplexDict {
     links.push((r"^\+=$".to_string(), Kind::Decrement));
     links.push((r"^<=$".to_string(), Kind::LessThanOrEqual));
     links.push((r"^\+=$".to_string(), Kind::GreaterThanOrEqual));
+    links.push((r"^\->$".to_string(), Kind::Arrow));
     links.push((r"[a-zA-Z_][a-zA-Z0-9_]*".to_string(), Kind::Identifier));
 
     let mut dict: HashMap<usize, Kind> = HashMap::new();

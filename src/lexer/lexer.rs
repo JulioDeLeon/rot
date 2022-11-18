@@ -373,7 +373,7 @@ impl Lexer {
         let check = self.get();
         match check {
             Some(c) => {
-                if c.is_alphanumeric() {
+                if c.is_alphanumeric() || c == '_' {
                     self.buffer.push(c);
                     KeywordEval
                 } else if is_special_char(c) {
