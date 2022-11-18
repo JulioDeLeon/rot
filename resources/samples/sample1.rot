@@ -1,4 +1,4 @@
-def somefunc() do
+def somefunc() -> usize do
     println("hello world!")
     x: u8 = 1
     1 != 1
@@ -13,4 +13,5 @@ def somefunc() do
     if x == 1 do
         print("Something")
     end
+    return x
 end
