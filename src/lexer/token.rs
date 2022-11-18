@@ -13,6 +13,7 @@ pub enum Kind {
     Def,
     DefImpl,
     Static,
+    Type,
     Return,
     Public, // expose?
     Mutable,
@@ -174,6 +175,7 @@ impl fmt::Display for Kind {
             Kind::Decrement => write!(f, "Decrement"),
             Kind::LessThanOrEqual => write!(f, "LessThanOrEqual"),
             Kind::GreaterThanOrEqual => write!(f, "GreaterThanOrEqual"),
+            Kind::Type => write!(f, "Type"),
             Kind::Arrow => write!(f, "Arrow"),
             Kind::Err(msg) => write!(f, "{}", format!("Kind::Error({})", msg)),
             _ => write!(f, "UNKNOWN CASE, NEED TO ADD PRINT HANDLE"),
@@ -301,6 +303,7 @@ pub fn build_simple_dictionary() -> SimpleDict {
     ret.insert("mut".to_string(), Kind::Mutable);
     ret.insert("if".to_string(), Kind::If);
     ret.insert("else".to_string(), Kind::Else);
+    ret.insert("type".to_string(), Kind::Type);
 
     // types / values
     ret.insert("null".to_string(), Kind::Null);

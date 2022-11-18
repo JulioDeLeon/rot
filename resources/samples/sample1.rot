@@ -1,3 +1,5 @@
+type SomeTypeFunc = (x: usize) -> String
+
 def somefunc(_unused: usize) -> usize do
     println("hello world!")
     x: u8 = 1
