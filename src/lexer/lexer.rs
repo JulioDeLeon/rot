@@ -251,7 +251,7 @@ impl Lexer {
         if x.is_whitespace() {
             self.flush_buffer();
             Start
-        } else if x.is_alphabetic() {
+        } else if x.is_alphabetic() || x == '_' {
             self.buffer.push(x);
             KeywordEval
         } else if x.is_numeric() {
