@@ -1,5 +1,7 @@
 use crate::lexer::lexer::LexerState::*;
-use crate::lexer::token::{build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, SimpleDict, Kind};
+use crate::lexer::token::{
+    build_complex_dictionary, build_simple_dictionary, find_kind, ComplexDict, Kind, SimpleDict,
+};
 use crate::lexer::token::{is_special_char, Token};
 use core::fmt;
 
@@ -144,8 +146,6 @@ impl Lexer {
             self.inc();
             self.last = self.curr;
             self.curr = Some(ret);
-            self.line_position += 1;
-
             match self.last {
                 Some(c) => {
                     if c == '\n' {
@@ -155,7 +155,7 @@ impl Lexer {
                 }
                 None => (),
             }
-
+            self.line_position += 1;
             Some(ret)
         } else {
             None
@@ -223,8 +223,9 @@ impl Lexer {
                 t_kind,
                 self.buffer.clone(),
                 self.line_number,
-                1 + self.line_position - self.buffer.len(),
+                self.line_position - self.buffer.len(),
             );
+            // dbg!(format!("token added: {}", t_token.clone()));
             self.tokens.push(t_token);
         } else {
             println!("was not able to derive kind from buffer: {}", self.buffer);
@@ -232,11 +233,18 @@ impl Lexer {
     }
 
     fn flush_buffer(&mut self) {
-        dbg!(format!("flushing buffer: <{}>", self.clone().buffer));
+        // dbg!(format!("flushing buffer: <{}>", self.clone().buffer));
         if !self.buffer.is_empty() {
             self.handle_buffer()
         }
         self.buffer = "".to_string()
+    }
+
+    fn flush_buffer_no_append(&mut self) {
+        let t_pos = self.line_position.clone();
+        self.line_position -= 1;
+        self.flush_buffer();
+        self.line_position = t_pos;
     }
 
     fn handle_general_complex_case(&mut self, x: char) -> LexerState {
@@ -373,7 +381,7 @@ impl Lexer {
                     self.buffer.push(c);
                     SpecialEval
                 } else if c.is_whitespace() {
-                    self.flush_buffer();
+                    self.flush_buffer_no_append();
                     Start
                 } else {
                     self.buffer.push(c);
@@ -392,7 +400,7 @@ impl Lexer {
         match check {
             Some(c) => {
                 if c.is_whitespace() {
-                    self.flush_buffer();
+                    self.flush_buffer_no_append();
                     Start
                 } else if c == '"' {
                     self.buffer.push(c);
@@ -476,7 +484,7 @@ impl Lexer {
                     self.buffer.push(c);
                     NumericEval
                 } else if c.is_whitespace() {
-                    self.flush_buffer();
+                    self.flush_buffer_no_append();
                     Start
                 } else {
                     self.buffer.push(c);
@@ -503,7 +511,7 @@ impl Lexer {
         // if not, flush buffer but leave next char in input for start to handle
         let next_is_special = match next_char {
             None => false,
-            Some(c) => is_special_char(c)
+            Some(c) => is_special_char(c),
         };
         if !next_is_special {
             self.flush_buffer();
@@ -512,31 +520,24 @@ impl Lexer {
 
         let cdict = self.complex_dict.clone();
         let sdict = self.simple_dict.clone();
-        let find_kind_h = |s: String| -> Option<Kind> {
-            find_kind(cdict.clone(), sdict.clone(),s).clone()
-        };
+        let find_kind_h =
+            |s: String| -> Option<Kind> { find_kind(cdict.clone(), sdict.clone(), s).clone() };
 
-        let generate_special_token = |t_kind: Option<Kind>, payload: String, ln: usize, pos: usize| -> Token {
-            match t_kind {
-                None => {
-                    Token::new(
-                        Kind::Err(format!("could not determine kind of {}", payload)),
-                        payload.clone(),
-                        ln,
-                        // this '-1' is needed for the offset of the get()
-                        pos,
-                    )
-                },
-                Some(kind) => {
-                    Token::new(
-                        kind,
-                        payload.clone(),
-                        ln,
-                        pos,
-                    )
+        let generate_special_token =
+            |t_kind: Option<Kind>, payload: String, ln: usize, pos: usize| -> Token {
+                match t_kind {
+                    None => {
+                        Token::new(
+                            Kind::Err(format!("could not determine kind of {}", payload)),
+                            payload.clone(),
+                            ln,
+                            // this '-1' is needed for the offset of the get()
+                            pos,
+                        )
+                    }
+                    Some(kind) => Token::new(kind, payload.clone(), ln, pos),
                 }
-            }
-        };
+            };
 
         let mut temp_buff_state = self.buffer.clone();
         let current_kind = find_kind_h(temp_buff_state.clone());
@@ -552,19 +553,25 @@ impl Lexer {
                 let next_kind = find_kind_h(c.to_string());
 
                 match combined_kind {
-                    Some(_)=> {
-                        dbg!(format!("flushing buffer: <{}>", temp_buff_state.clone()));
+                    Some(_) => {
+                        // dbg!(format!("flushing buffer: <{}>", temp_buff_state.clone()));
                         // treat together
-                        let tok = generate_special_token(combined_kind.clone(), temp_buff_state.clone(), ln, pos);
+                        let tok = generate_special_token(
+                            combined_kind.clone(),
+                            temp_buff_state.clone(),
+                            ln,
+                            pos,
+                        );
                         self.tokens.push(tok);
                         self.buffer = "".to_string();
-                    },
+                    }
                     None => {
                         // treat separately
-                        dbg!(format!("flushing buffer: <{}>", self.buffer.clone()));
-                        let mut tok = generate_special_token(current_kind, self.buffer.clone(), ln, pos - 1);
+                        //dbg!(format!("flushing buffer: <{}>", self.buffer.clone()));
+                        let mut tok =
+                            generate_special_token(current_kind, self.buffer.clone(), ln, pos - 1);
                         self.tokens.push(tok.clone());
-                        dbg!(format!("flushing buffer: <{}>", c.to_string()));
+                        //dbg!(format!("flushing buffer: <{}>", c.to_string()));
                         tok = generate_special_token(next_kind, c.to_string(), ln, pos);
                         self.tokens.push(tok.clone());
                         self.buffer = "".to_string();
@@ -573,7 +580,7 @@ impl Lexer {
 
                 // go back to start regardless
                 Start
-            },
+            }
             _ => {
                 self.flush_buffer();
                 Start
