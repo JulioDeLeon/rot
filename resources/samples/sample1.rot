@@ -1,6 +1,6 @@
 type SomeTypeFunc = (x: usize) -> String
 
-def somefunc(_unused: usize) -> usize do
+def somefunc(_unused: usize, second: String) -> usize do
     println("hello world!")
     x: u8 = 1
     1 != 1

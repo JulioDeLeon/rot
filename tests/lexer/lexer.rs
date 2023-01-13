@@ -52,7 +52,7 @@ fn test_complex_evaluation() {
     "#;
 
     let mut lex = Lexer::new(sample.chars().collect());
-    lex.parse();
+    lex.lex();
     let toks = lex.tokens;
 
     assert_eq!(toks.is_empty(), false);
@@ -61,7 +61,7 @@ fn test_complex_evaluation() {
 
 fn lexer_helper(term: String, expected_kind: Kind) {
     let mut lex = Lexer::new(term.chars().collect());
-    lex.parse();
+    lex.lex();
     let toks = lex.tokens;
     assert_eq!(toks.is_empty(), false);
     assert_eq!(toks.len(), 1);

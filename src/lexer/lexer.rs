@@ -162,7 +162,7 @@ impl Lexer {
         self.index += 1;
     }
 
-    pub fn parse(&mut self) {
+    pub fn lex(&mut self) {
         while self.state != End {
             let new_state = self.handle_state();
             if let Error(msg) = new_state {
